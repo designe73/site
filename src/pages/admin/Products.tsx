@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Plus, Pencil, Trash2, Search } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, X, Car } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -29,6 +29,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { formatPrice } from '@/lib/formatPrice';
 import { toast } from 'sonner';
@@ -54,13 +57,24 @@ interface Category {
   name: string;
 }
 
+interface Vehicle {
+  id: string;
+  brand: string;
+  model: string;
+  year: number;
+  engine: string | null;
+}
+
 const Products = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [vehicleSearch, setVehicleSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [selectedVehicleIds, setSelectedVehicleIds] = useState<string[]>([]);
   
   const [form, setForm] = useState({
     name: '',
@@ -91,9 +105,26 @@ const Products = () => {
     setCategories(data || []);
   };
 
+  const fetchVehicles = async () => {
+    const { data } = await supabase
+      .from('vehicles')
+      .select('*')
+      .order('brand', { ascending: true });
+    setVehicles(data || []);
+  };
+
+  const fetchProductVehicles = async (productId: string) => {
+    const { data } = await supabase
+      .from('product_vehicles')
+      .select('vehicle_id')
+      .eq('product_id', productId);
+    return data?.map(pv => pv.vehicle_id) || [];
+  };
+
   useEffect(() => {
     fetchProducts();
     fetchCategories();
+    fetchVehicles();
   }, []);
 
   const generateSlug = (name: string) => {
@@ -131,27 +162,54 @@ const Products = () => {
       
       if (error) {
         toast.error('Erreur lors de la modification');
-      } else {
-        toast.success('Produit modifié');
-        setDialogOpen(false);
-        fetchProducts();
+        return;
       }
+
+      // Update product vehicles
+      await supabase
+        .from('product_vehicles')
+        .delete()
+        .eq('product_id', editingProduct.id);
+
+      if (selectedVehicleIds.length > 0) {
+        const vehicleLinks = selectedVehicleIds.map(vehicleId => ({
+          product_id: editingProduct.id,
+          vehicle_id: vehicleId,
+        }));
+        await supabase.from('product_vehicles').insert(vehicleLinks);
+      }
+
+      toast.success('Produit modifié');
+      setDialogOpen(false);
+      fetchProducts();
     } else {
-      const { error } = await supabase
+      const { data: newProduct, error } = await supabase
         .from('products')
-        .insert(productData);
+        .insert(productData)
+        .select()
+        .single();
       
-      if (error) {
+      if (error || !newProduct) {
         toast.error('Erreur lors de la création');
-      } else {
-        toast.success('Produit créé');
-        setDialogOpen(false);
-        fetchProducts();
+        return;
       }
+
+      // Add product vehicles
+      if (selectedVehicleIds.length > 0) {
+        const vehicleLinks = selectedVehicleIds.map(vehicleId => ({
+          product_id: newProduct.id,
+          vehicle_id: vehicleId,
+        }));
+        await supabase.from('product_vehicles').insert(vehicleLinks);
+      }
+
+      toast.success('Produit créé');
+      setDialogOpen(false);
+      fetchProducts();
     }
   };
 
-  const handleEdit = (product: Product) => {
+  const handleEdit = async (product: Product) => {
     setEditingProduct(product);
     setForm({
       name: product.name,
@@ -167,11 +225,17 @@ const Products = () => {
       is_featured: product.is_featured || false,
       is_promo: product.is_promo || false,
     });
+    
+    const vehicleIds = await fetchProductVehicles(product.id);
+    setSelectedVehicleIds(vehicleIds);
     setDialogOpen(true);
   };
 
   const handleDelete = async (id: string) => {
     if (confirm('Supprimer ce produit ?')) {
+      // Delete product vehicles first
+      await supabase.from('product_vehicles').delete().eq('product_id', id);
+      
       const { error } = await supabase.from('products').delete().eq('id', id);
       if (error) {
         toast.error('Erreur lors de la suppression');
@@ -184,6 +248,8 @@ const Products = () => {
 
   const resetForm = () => {
     setEditingProduct(null);
+    setSelectedVehicleIds([]);
+    setVehicleSearch('');
     setForm({
       name: '',
       slug: '',
@@ -200,10 +266,28 @@ const Products = () => {
     });
   };
 
+  const toggleVehicle = (vehicleId: string) => {
+    setSelectedVehicleIds(prev => 
+      prev.includes(vehicleId) 
+        ? prev.filter(id => id !== vehicleId)
+        : [...prev, vehicleId]
+    );
+  };
+
+  const getVehicleLabel = (vehicle: Vehicle) => {
+    return `${vehicle.brand} ${vehicle.model} ${vehicle.year}${vehicle.engine ? ` - ${vehicle.engine}` : ''}`;
+  };
+
   const filteredProducts = products.filter(p => 
     p.name.toLowerCase().includes(search.toLowerCase()) ||
     p.reference?.toLowerCase().includes(search.toLowerCase())
   );
+
+  const filteredVehicles = vehicles.filter(v => 
+    getVehicleLabel(v).toLowerCase().includes(vehicleSearch.toLowerCase())
+  );
+
+  const selectedVehicles = vehicles.filter(v => selectedVehicleIds.includes(v.id));
 
   return (
     <>
@@ -221,7 +305,7 @@ const Products = () => {
                 Ajouter un produit
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>
                   {editingProduct ? 'Modifier le produit' : 'Nouveau produit'}
@@ -323,6 +407,62 @@ const Products = () => {
                     onChange={(e) => setForm({ ...form, description: e.target.value })}
                     rows={3}
                   />
+                </div>
+
+                {/* Véhicules compatibles */}
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Car className="h-4 w-4" />
+                    Véhicules compatibles
+                  </Label>
+                  
+                  {selectedVehicles.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {selectedVehicles.map(vehicle => (
+                        <Badge 
+                          key={vehicle.id} 
+                          variant="secondary"
+                          className="flex items-center gap-1"
+                        >
+                          {getVehicleLabel(vehicle)}
+                          <X 
+                            className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                            onClick={() => toggleVehicle(vehicle.id)}
+                          />
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+
+                  <Input
+                    placeholder="Rechercher un véhicule..."
+                    value={vehicleSearch}
+                    onChange={(e) => setVehicleSearch(e.target.value)}
+                  />
+                  
+                  <ScrollArea className="h-40 border rounded-md p-2">
+                    {filteredVehicles.length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-4">
+                        Aucun véhicule trouvé
+                      </p>
+                    ) : (
+                      <div className="space-y-2">
+                        {filteredVehicles.map(vehicle => (
+                          <div 
+                            key={vehicle.id}
+                            className="flex items-center gap-2 p-2 hover:bg-muted rounded cursor-pointer"
+                            onClick={() => toggleVehicle(vehicle.id)}
+                          >
+                            <Checkbox 
+                              checked={selectedVehicleIds.includes(vehicle.id)}
+                              onCheckedChange={() => toggleVehicle(vehicle.id)}
+                            />
+                            <span className="text-sm">{getVehicleLabel(vehicle)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </ScrollArea>
                 </div>
 
                 <div className="flex items-center gap-6">
