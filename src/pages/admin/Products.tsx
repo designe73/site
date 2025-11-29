@@ -374,6 +374,7 @@ const Products = () => {
                 <TableHead>Image</TableHead>
                 <TableHead>Nom</TableHead>
                 <TableHead>Référence</TableHead>
+                <TableHead>Catégorie</TableHead>
                 <TableHead>Prix</TableHead>
                 <TableHead>Stock</TableHead>
                 <TableHead>Actions</TableHead>
@@ -382,51 +383,55 @@ const Products = () => {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8">
+                  <TableCell colSpan={7} className="text-center py-8">
                     Chargement...
                   </TableCell>
                 </TableRow>
               ) : filteredProducts.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                     Aucun produit trouvé
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredProducts.map((product) => (
-                  <TableRow key={product.id}>
-                    <TableCell>
-                      <div className="w-12 h-12 bg-muted rounded overflow-hidden">
-                        {product.image_url && (
-                          <img src={product.image_url} alt="" className="w-full h-full object-cover" />
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="font-medium">{product.name}</TableCell>
-                    <TableCell>{product.reference || '-'}</TableCell>
-                    <TableCell>{formatPrice(product.price)}</TableCell>
-                    <TableCell>
-                      <span className={product.stock > 0 ? 'text-success' : 'text-destructive'}>
-                        {product.stock}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="icon" onClick={() => handleEdit(product)}>
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="text-destructive"
-                          onClick={() => handleDelete(product.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
+              filteredProducts.map((product) => {
+                  const category = categories.find(c => c.id === product.category_id);
+                  return (
+                    <TableRow key={product.id}>
+                      <TableCell>
+                        <div className="w-12 h-12 bg-muted rounded overflow-hidden">
+                          {product.image_url && (
+                            <img src={product.image_url} alt="" className="w-full h-full object-cover" />
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-medium">{product.name}</TableCell>
+                      <TableCell>{product.reference || '-'}</TableCell>
+                      <TableCell>{category?.name || '-'}</TableCell>
+                      <TableCell>{formatPrice(product.price)}</TableCell>
+                      <TableCell>
+                        <span className={product.stock > 0 ? 'text-success' : 'text-destructive'}>
+                          {product.stock}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Button variant="ghost" size="icon" onClick={() => handleEdit(product)}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="text-destructive"
+                            onClick={() => handleDelete(product.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               )}
             </TableBody>
           </Table>
