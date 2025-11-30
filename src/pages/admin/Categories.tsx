@@ -4,6 +4,7 @@ import { Plus, Pencil, Trash2, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import {
   Table,
   TableBody,
@@ -39,8 +40,22 @@ interface Category {
   parent_id: string | null;
 }
 
+interface CategorySpecType {
+  category_id: string;
+  spec_type: string;
+}
+
+const SPEC_TYPES = [
+  { value: 'tire', label: 'Pneus' },
+  { value: 'battery', label: 'Batteries' },
+  { value: 'mechanical', label: 'Pièces mécaniques' },
+  { value: 'oil', label: 'Huiles et liquides' },
+  { value: 'accessory', label: 'Accessoires' },
+];
+
 const Categories = () => {
   const [categories, setCategories] = useState<Category[]>([]);
+  const [specTypes, setSpecTypes] = useState<CategorySpecType[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -52,6 +67,7 @@ const Categories = () => {
     icon: '',
     image_url: '',
     parent_id: '',
+    spec_type: '',
   });
 
   const fetchCategories = async () => {
@@ -63,9 +79,26 @@ const Categories = () => {
     setLoading(false);
   };
 
+  const fetchSpecTypes = async () => {
+    const { data } = await supabase.from('category_spec_types').select('*');
+    setSpecTypes(data || []);
+  };
+
   useEffect(() => {
     fetchCategories();
+    fetchSpecTypes();
   }, []);
+
+  const getSpecTypeForCategory = (categoryId: string) => {
+    const specType = specTypes.find(st => st.category_id === categoryId);
+    return specType?.spec_type || null;
+  };
+
+  const getSpecTypeLabel = (specType: string | null) => {
+    if (!specType) return null;
+    const found = SPEC_TYPES.find(st => st.value === specType);
+    return found?.label || specType;
+  };
 
   const generateSlug = (name: string) => {
     return name
@@ -101,34 +134,59 @@ const Categories = () => {
       
       if (error) {
         toast.error('Erreur lors de la modification');
-      } else {
-        toast.success('Catégorie modifiée');
-        setDialogOpen(false);
-        fetchCategories();
+        return;
       }
+
+      // Update spec type
+      await supabase.from('category_spec_types').delete().eq('category_id', editingCategory.id);
+      if (form.spec_type) {
+        await supabase.from('category_spec_types').insert({
+          category_id: editingCategory.id,
+          spec_type: form.spec_type,
+        });
+      }
+
+      toast.success('Catégorie modifiée');
+      setDialogOpen(false);
+      fetchCategories();
+      fetchSpecTypes();
     } else {
-      const { error } = await supabase
+      const { data: newCat, error } = await supabase
         .from('categories')
-        .insert(categoryData);
+        .insert(categoryData)
+        .select()
+        .single();
       
-      if (error) {
+      if (error || !newCat) {
         toast.error('Erreur lors de la création');
-      } else {
-        toast.success('Catégorie créée');
-        setDialogOpen(false);
-        fetchCategories();
+        return;
       }
+
+      // Add spec type
+      if (form.spec_type) {
+        await supabase.from('category_spec_types').insert({
+          category_id: newCat.id,
+          spec_type: form.spec_type,
+        });
+      }
+
+      toast.success('Catégorie créée');
+      setDialogOpen(false);
+      fetchCategories();
+      fetchSpecTypes();
     }
   };
 
   const handleEdit = (category: Category) => {
     setEditingCategory(category);
+    const specType = getSpecTypeForCategory(category.id);
     setForm({
       name: category.name,
       slug: category.slug,
       icon: category.icon || '',
       image_url: category.image_url || '',
       parent_id: category.parent_id || '',
+      spec_type: specType || '',
     });
     setDialogOpen(true);
   };
@@ -153,6 +211,7 @@ const Categories = () => {
       icon: '',
       image_url: '',
       parent_id: '',
+      spec_type: '',
     });
   };
 
@@ -241,6 +300,24 @@ const Categories = () => {
                   />
                 </div>
 
+                <div className="space-y-2">
+                  <Label>Type de filtres spécifiques</Label>
+                  <Select 
+                    value={form.spec_type} 
+                    onValueChange={(v) => setForm({ ...form, spec_type: v === 'none' ? '' : v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Aucun filtre spécifique" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Aucun filtre spécifique</SelectItem>
+                      {SPEC_TYPES.map((type) => (
+                        <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div className="flex justify-end gap-4">
                   <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                     Annuler
@@ -273,7 +350,7 @@ const Categories = () => {
                 <TableHead>Nom</TableHead>
                 <TableHead>Slug</TableHead>
                 <TableHead>Catégorie parente</TableHead>
-                <TableHead>Icône</TableHead>
+                <TableHead>Type filtres</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -296,7 +373,11 @@ const Categories = () => {
                     <TableCell className="font-medium">{category.name}</TableCell>
                     <TableCell className="text-muted-foreground">{category.slug}</TableCell>
                     <TableCell>{getParentCategoryName(category.parent_id)}</TableCell>
-                    <TableCell>{category.icon || '-'}</TableCell>
+                    <TableCell>
+                      {getSpecTypeLabel(getSpecTypeForCategory(category.id)) ? (
+                        <Badge variant="secondary">{getSpecTypeLabel(getSpecTypeForCategory(category.id))}</Badge>
+                      ) : '-'}
+                    </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Button variant="ghost" size="icon" onClick={() => handleEdit(category)}>
