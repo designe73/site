@@ -14,6 +14,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      accessory_specs: {
+        Row: {
+          color: string | null
+          compatibility: string | null
+          created_at: string
+          id: string
+          material: string | null
+          product_id: string
+        }
+        Insert: {
+          color?: string | null
+          compatibility?: string | null
+          created_at?: string
+          id?: string
+          material?: string | null
+          product_id: string
+        }
+        Update: {
+          color?: string | null
+          compatibility?: string | null
+          created_at?: string
+          id?: string
+          material?: string | null
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accessory_specs_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       banners: {
         Row: {
           created_at: string
@@ -46,6 +81,53 @@ export type Database = {
           title?: string
         }
         Relationships: []
+      }
+      battery_specs: {
+        Row: {
+          amperage: number | null
+          created_at: string
+          height_mm: number | null
+          id: string
+          length_mm: number | null
+          product_id: string
+          start_power: number | null
+          technology: string | null
+          terminal_position: string | null
+          width_mm: number | null
+        }
+        Insert: {
+          amperage?: number | null
+          created_at?: string
+          height_mm?: number | null
+          id?: string
+          length_mm?: number | null
+          product_id: string
+          start_power?: number | null
+          technology?: string | null
+          terminal_position?: string | null
+          width_mm?: number | null
+        }
+        Update: {
+          amperage?: number | null
+          created_at?: string
+          height_mm?: number | null
+          id?: string
+          length_mm?: number | null
+          product_id?: string
+          start_power?: number | null
+          technology?: string | null
+          terminal_position?: string | null
+          width_mm?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "battery_specs_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       cart_items: {
         Row: {
@@ -113,6 +195,108 @@ export type Database = {
             columns: ["parent_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      category_spec_types: {
+        Row: {
+          category_id: string
+          id: string
+          spec_type: string
+        }
+        Insert: {
+          category_id: string
+          id?: string
+          spec_type: string
+        }
+        Update: {
+          category_id?: string
+          id?: string
+          spec_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "category_spec_types_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: true
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mechanical_specs: {
+        Row: {
+          assembly_side: string | null
+          condition: string | null
+          created_at: string
+          id: string
+          material: string | null
+          product_id: string
+          system_type: string | null
+        }
+        Insert: {
+          assembly_side?: string | null
+          condition?: string | null
+          created_at?: string
+          id?: string
+          material?: string | null
+          product_id: string
+          system_type?: string | null
+        }
+        Update: {
+          assembly_side?: string | null
+          condition?: string | null
+          created_at?: string
+          id?: string
+          material?: string | null
+          product_id?: string
+          system_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mechanical_specs_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      oil_specs: {
+        Row: {
+          capacity: string | null
+          created_at: string
+          id: string
+          manufacturer_norm: string | null
+          oil_type: string | null
+          product_id: string
+          viscosity: string | null
+        }
+        Insert: {
+          capacity?: string | null
+          created_at?: string
+          id?: string
+          manufacturer_norm?: string | null
+          oil_type?: string | null
+          product_id: string
+          viscosity?: string | null
+        }
+        Update: {
+          capacity?: string | null
+          created_at?: string
+          id?: string
+          manufacturer_norm?: string | null
+          oil_type?: string | null
+          product_id?: string
+          viscosity?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "oil_specs_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
         ]
@@ -346,6 +530,53 @@ export type Database = {
           site_name?: string | null
         }
         Relationships: []
+      }
+      tire_specs: {
+        Row: {
+          created_at: string
+          diameter: number | null
+          height: number | null
+          id: string
+          load_index: string | null
+          product_id: string
+          runflat: boolean | null
+          season: string | null
+          speed_index: string | null
+          width: number | null
+        }
+        Insert: {
+          created_at?: string
+          diameter?: number | null
+          height?: number | null
+          id?: string
+          load_index?: string | null
+          product_id: string
+          runflat?: boolean | null
+          season?: string | null
+          speed_index?: string | null
+          width?: number | null
+        }
+        Update: {
+          created_at?: string
+          diameter?: number | null
+          height?: number | null
+          id?: string
+          load_index?: string | null
+          product_id?: string
+          runflat?: boolean | null
+          season?: string | null
+          speed_index?: string | null
+          width?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tire_specs_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       vehicles: {
         Row: {
