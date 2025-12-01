@@ -5,21 +5,18 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useCart } from '@/hooks/useCart';
 import GlobalSearch from '@/components/search/GlobalSearch';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { user, signOut, isAdmin } = useAuth();
-  const { totalItems } = useCart();
-
-  return (
-    <header className="sticky top-0 z-50 w-full">
+  const {
+    user,
+    signOut,
+    isAdmin
+  } = useAuth();
+  const {
+    totalItems
+  } = useCart();
+  return <header className="sticky top-0 z-50 w-full">
       {/* Top bar */}
       <div className="bg-secondary text-secondary-foreground py-2 px-4">
         <div className="container flex items-center justify-between text-sm">
@@ -42,10 +39,10 @@ const Header = () => {
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2 shrink-0">
               <div className="bg-primary text-primary-foreground font-roboto-condensed text-2xl font-bold px-3 py-1 rounded">
-                AUTO
+                ​SEN
               </div>
               <span className="font-roboto-condensed text-2xl font-bold text-foreground hidden sm:inline">
-                PIÈCES
+                PIECES
               </span>
             </Link>
 
@@ -62,39 +59,33 @@ const Header = () => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
-                  {user ? (
-                    <>
+                  {user ? <>
                       <DropdownMenuItem asChild>
                         <Link to="/compte">Mon compte</Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
                         <Link to="/commandes">Mes commandes</Link>
                       </DropdownMenuItem>
-                      {isAdmin && (
-                        <>
+                      {isAdmin && <>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem asChild>
                             <Link to="/admin" className="text-primary font-medium">
                               Administration
                             </Link>
                           </DropdownMenuItem>
-                        </>
-                      )}
+                        </>}
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={signOut}>
                         Déconnexion
                       </DropdownMenuItem>
-                    </>
-                  ) : (
-                    <>
+                    </> : <>
                       <DropdownMenuItem asChild>
                         <Link to="/connexion">Connexion</Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
                         <Link to="/inscription">Inscription</Link>
                       </DropdownMenuItem>
-                    </>
-                  )}
+                    </>}
                 </DropdownMenuContent>
               </DropdownMenu>
 
@@ -102,21 +93,14 @@ const Header = () => {
               <Button variant="ghost" size="icon" className="relative" asChild>
                 <Link to="/panier">
                   <ShoppingCart className="h-6 w-6" />
-                  {totalItems > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                  {totalItems > 0 && <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
                       {totalItems}
-                    </span>
-                  )}
+                    </span>}
                 </Link>
               </Button>
 
               {/* Mobile menu toggle */}
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="md:hidden"
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              >
+              <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
                 {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
               </Button>
             </div>
@@ -166,8 +150,6 @@ const Header = () => {
           </div>
         </nav>
       </div>
-    </header>
-  );
+    </header>;
 };
-
 export default Header;
