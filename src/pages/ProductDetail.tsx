@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { useCart } from '@/hooks/useCart';
 import { formatPrice } from '@/lib/formatPrice';
+import ProductSpecs from '@/components/product/ProductSpecs';
 
 interface Product {
   id: string;
@@ -247,6 +248,9 @@ const ProductDetail = () => {
                   <span className="text-sm">Retour sous 14 jours</span>
                 </div>
               </Card>
+
+              {/* Specifications */}
+              <ProductSpecs productId={product.id} categoryId={product.category?.id || null} />
 
               {/* Description */}
               {product.description && (

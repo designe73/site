@@ -35,6 +35,14 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { formatPrice } from '@/lib/formatPrice';
 import { toast } from 'sonner';
+import ProductSpecsForm, {
+  SpecType,
+  TireSpecForm,
+  BatterySpecForm,
+  MechanicalSpecForm,
+  OilSpecForm,
+  AccessorySpecForm,
+} from '@/components/admin/ProductSpecsForm';
 
 interface Product {
   id: string;
@@ -65,16 +73,50 @@ interface Vehicle {
   engine: string | null;
 }
 
+interface CategorySpecType {
+  category_id: string;
+  spec_type: string;
+}
+
+const emptyTireForm: TireSpecForm = {
+  width: '', height: '', diameter: '', season: '', load_index: '', speed_index: '', runflat: false
+};
+
+const emptyBatteryForm: BatterySpecForm = {
+  amperage: '', start_power: '', terminal_position: '', technology: '', length_mm: '', width_mm: '', height_mm: ''
+};
+
+const emptyMechanicalForm: MechanicalSpecForm = {
+  assembly_side: '', system_type: '', material: '', condition: ''
+};
+
+const emptyOilForm: OilSpecForm = {
+  viscosity: '', oil_type: '', manufacturer_norm: '', capacity: ''
+};
+
+const emptyAccessoryForm: AccessorySpecForm = {
+  compatibility: '', material: '', color: ''
+};
+
 const Products = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [categorySpecTypes, setCategorySpecTypes] = useState<CategorySpecType[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [vehicleSearch, setVehicleSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [selectedVehicleIds, setSelectedVehicleIds] = useState<string[]>([]);
+  
+  // Spec forms state
+  const [specType, setSpecType] = useState<SpecType>(null);
+  const [tireForm, setTireForm] = useState<TireSpecForm>(emptyTireForm);
+  const [batteryForm, setBatteryForm] = useState<BatterySpecForm>(emptyBatteryForm);
+  const [mechanicalForm, setMechanicalForm] = useState<MechanicalSpecForm>(emptyMechanicalForm);
+  const [oilForm, setOilForm] = useState<OilSpecForm>(emptyOilForm);
+  const [accessoryForm, setAccessoryForm] = useState<AccessorySpecForm>(emptyAccessoryForm);
   
   const [form, setForm] = useState({
     name: '',
@@ -113,6 +155,11 @@ const Products = () => {
     setVehicles(data || []);
   };
 
+  const fetchCategorySpecTypes = async () => {
+    const { data } = await supabase.from('category_spec_types').select('*');
+    setCategorySpecTypes(data || []);
+  };
+
   const fetchProductVehicles = async (productId: string) => {
     const { data } = await supabase
       .from('product_vehicles')
@@ -121,11 +168,79 @@ const Products = () => {
     return data?.map(pv => pv.vehicle_id) || [];
   };
 
+  const fetchProductSpecs = async (productId: string, type: SpecType) => {
+    if (!type) return;
+
+    if (type === 'tire') {
+      const { data } = await supabase.from('tire_specs').select('*').eq('product_id', productId).maybeSingle();
+      if (data) {
+        setTireForm({
+          width: data.width?.toString() || '',
+          height: data.height?.toString() || '',
+          diameter: data.diameter?.toString() || '',
+          season: data.season || '',
+          load_index: data.load_index || '',
+          speed_index: data.speed_index || '',
+          runflat: data.runflat || false,
+        });
+      }
+    } else if (type === 'battery') {
+      const { data } = await supabase.from('battery_specs').select('*').eq('product_id', productId).maybeSingle();
+      if (data) {
+        setBatteryForm({
+          amperage: data.amperage?.toString() || '',
+          start_power: data.start_power?.toString() || '',
+          terminal_position: data.terminal_position || '',
+          technology: data.technology || '',
+          length_mm: data.length_mm?.toString() || '',
+          width_mm: data.width_mm?.toString() || '',
+          height_mm: data.height_mm?.toString() || '',
+        });
+      }
+    } else if (type === 'mechanical') {
+      const { data } = await supabase.from('mechanical_specs').select('*').eq('product_id', productId).maybeSingle();
+      if (data) {
+        setMechanicalForm({
+          assembly_side: data.assembly_side || '',
+          system_type: data.system_type || '',
+          material: data.material || '',
+          condition: data.condition || '',
+        });
+      }
+    } else if (type === 'oil') {
+      const { data } = await supabase.from('oil_specs').select('*').eq('product_id', productId).maybeSingle();
+      if (data) {
+        setOilForm({
+          viscosity: data.viscosity || '',
+          oil_type: data.oil_type || '',
+          manufacturer_norm: data.manufacturer_norm || '',
+          capacity: data.capacity || '',
+        });
+      }
+    } else if (type === 'accessory') {
+      const { data } = await supabase.from('accessory_specs').select('*').eq('product_id', productId).maybeSingle();
+      if (data) {
+        setAccessoryForm({
+          compatibility: data.compatibility || '',
+          material: data.material || '',
+          color: data.color || '',
+        });
+      }
+    }
+  };
+
   useEffect(() => {
     fetchProducts();
     fetchCategories();
     fetchVehicles();
+    fetchCategorySpecTypes();
   }, []);
+
+  // Update spec type when category changes
+  useEffect(() => {
+    const catSpecType = categorySpecTypes.find(cst => cst.category_id === form.category_id);
+    setSpecType(catSpecType?.spec_type as SpecType || null);
+  }, [form.category_id, categorySpecTypes]);
 
   const generateSlug = (name: string) => {
     return name
@@ -134,6 +249,62 @@ const Products = () => {
       .replace(/[\u0300-\u036f]/g, '')
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '');
+  };
+
+  const saveSpecs = async (productId: string, type: SpecType) => {
+    if (!type) return;
+
+    if (type === 'tire') {
+      await supabase.from('tire_specs').delete().eq('product_id', productId);
+      await supabase.from('tire_specs').insert({
+        product_id: productId,
+        width: tireForm.width ? parseInt(tireForm.width) : null,
+        height: tireForm.height ? parseInt(tireForm.height) : null,
+        diameter: tireForm.diameter ? parseInt(tireForm.diameter) : null,
+        season: tireForm.season || null,
+        load_index: tireForm.load_index || null,
+        speed_index: tireForm.speed_index || null,
+        runflat: tireForm.runflat,
+      });
+    } else if (type === 'battery') {
+      await supabase.from('battery_specs').delete().eq('product_id', productId);
+      await supabase.from('battery_specs').insert({
+        product_id: productId,
+        amperage: batteryForm.amperage ? parseInt(batteryForm.amperage) : null,
+        start_power: batteryForm.start_power ? parseInt(batteryForm.start_power) : null,
+        terminal_position: batteryForm.terminal_position || null,
+        technology: batteryForm.technology || null,
+        length_mm: batteryForm.length_mm ? parseInt(batteryForm.length_mm) : null,
+        width_mm: batteryForm.width_mm ? parseInt(batteryForm.width_mm) : null,
+        height_mm: batteryForm.height_mm ? parseInt(batteryForm.height_mm) : null,
+      });
+    } else if (type === 'mechanical') {
+      await supabase.from('mechanical_specs').delete().eq('product_id', productId);
+      await supabase.from('mechanical_specs').insert({
+        product_id: productId,
+        assembly_side: mechanicalForm.assembly_side || null,
+        system_type: mechanicalForm.system_type || null,
+        material: mechanicalForm.material || null,
+        condition: mechanicalForm.condition || null,
+      });
+    } else if (type === 'oil') {
+      await supabase.from('oil_specs').delete().eq('product_id', productId);
+      await supabase.from('oil_specs').insert({
+        product_id: productId,
+        viscosity: oilForm.viscosity || null,
+        oil_type: oilForm.oil_type || null,
+        manufacturer_norm: oilForm.manufacturer_norm || null,
+        capacity: oilForm.capacity || null,
+      });
+    } else if (type === 'accessory') {
+      await supabase.from('accessory_specs').delete().eq('product_id', productId);
+      await supabase.from('accessory_specs').insert({
+        product_id: productId,
+        compatibility: accessoryForm.compatibility || null,
+        material: accessoryForm.material || null,
+        color: accessoryForm.color || null,
+      });
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -166,11 +337,7 @@ const Products = () => {
       }
 
       // Update product vehicles
-      await supabase
-        .from('product_vehicles')
-        .delete()
-        .eq('product_id', editingProduct.id);
-
+      await supabase.from('product_vehicles').delete().eq('product_id', editingProduct.id);
       if (selectedVehicleIds.length > 0) {
         const vehicleLinks = selectedVehicleIds.map(vehicleId => ({
           product_id: editingProduct.id,
@@ -178,6 +345,9 @@ const Products = () => {
         }));
         await supabase.from('product_vehicles').insert(vehicleLinks);
       }
+
+      // Save specs
+      await saveSpecs(editingProduct.id, specType);
 
       toast.success('Produit modifié');
       setDialogOpen(false);
@@ -202,6 +372,9 @@ const Products = () => {
         }));
         await supabase.from('product_vehicles').insert(vehicleLinks);
       }
+
+      // Save specs
+      await saveSpecs(newProduct.id, specType);
 
       toast.success('Produit créé');
       setDialogOpen(false);
@@ -228,13 +401,27 @@ const Products = () => {
     
     const vehicleIds = await fetchProductVehicles(product.id);
     setSelectedVehicleIds(vehicleIds);
+
+    // Fetch spec type and specs
+    const catSpecType = categorySpecTypes.find(cst => cst.category_id === product.category_id);
+    const type = catSpecType?.spec_type as SpecType || null;
+    setSpecType(type);
+    if (type) {
+      await fetchProductSpecs(product.id, type);
+    }
+
     setDialogOpen(true);
   };
 
   const handleDelete = async (id: string) => {
     if (confirm('Supprimer ce produit ?')) {
-      // Delete product vehicles first
+      // Delete related data
       await supabase.from('product_vehicles').delete().eq('product_id', id);
+      await supabase.from('tire_specs').delete().eq('product_id', id);
+      await supabase.from('battery_specs').delete().eq('product_id', id);
+      await supabase.from('mechanical_specs').delete().eq('product_id', id);
+      await supabase.from('oil_specs').delete().eq('product_id', id);
+      await supabase.from('accessory_specs').delete().eq('product_id', id);
       
       const { error } = await supabase.from('products').delete().eq('id', id);
       if (error) {
@@ -250,6 +437,12 @@ const Products = () => {
     setEditingProduct(null);
     setSelectedVehicleIds([]);
     setVehicleSearch('');
+    setSpecType(null);
+    setTireForm(emptyTireForm);
+    setBatteryForm(emptyBatteryForm);
+    setMechanicalForm(emptyMechanicalForm);
+    setOilForm(emptyOilForm);
+    setAccessoryForm(emptyAccessoryForm);
     setForm({
       name: '',
       slug: '',
@@ -408,6 +601,21 @@ const Products = () => {
                     rows={3}
                   />
                 </div>
+
+                {/* Attributs spécifiques */}
+                <ProductSpecsForm
+                  specType={specType}
+                  tireForm={tireForm}
+                  batteryForm={batteryForm}
+                  mechanicalForm={mechanicalForm}
+                  oilForm={oilForm}
+                  accessoryForm={accessoryForm}
+                  onTireChange={setTireForm}
+                  onBatteryChange={setBatteryForm}
+                  onMechanicalChange={setMechanicalForm}
+                  onOilChange={setOilForm}
+                  onAccessoryChange={setAccessoryForm}
+                />
 
                 {/* Véhicules compatibles */}
                 <div className="space-y-2">
