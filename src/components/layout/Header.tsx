@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Search, ShoppingCart, User, Menu, X, Phone, ChevronDown } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { ShoppingCart, User, Menu, X, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/useAuth';
 import { useCart } from '@/hooks/useCart';
+import GlobalSearch from '@/components/search/GlobalSearch';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,18 +14,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 const Header = () => {
-  const [searchQuery, setSearchQuery] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const navigate = useNavigate();
   const { user, signOut, isAdmin } = useAuth();
   const { totalItems } = useCart();
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/recherche?q=${encodeURIComponent(searchQuery)}`);
-    }
-  };
 
   return (
     <header className="sticky top-0 z-50 w-full">
@@ -58,25 +49,8 @@ const Header = () => {
               </span>
             </Link>
 
-            {/* Search bar */}
-            <form onSubmit={handleSearch} className="flex-1 max-w-2xl hidden md:flex">
-              <div className="relative w-full">
-                <Input
-                  type="search"
-                  placeholder="Rechercher une pièce, une référence..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-4 pr-12 py-6 input-search rounded-lg"
-                />
-                <Button 
-                  type="submit" 
-                  size="icon" 
-                  className="absolute right-1 top-1/2 -translate-y-1/2 btn-primary rounded-md"
-                >
-                  <Search className="h-5 w-5" />
-                </Button>
-              </div>
-            </form>
+            {/* Search bar with autocomplete */}
+            <GlobalSearch className="flex-1 max-w-2xl hidden md:block" />
 
             {/* Actions */}
             <div className="flex items-center gap-2">
@@ -149,24 +123,9 @@ const Header = () => {
           </div>
 
           {/* Mobile search */}
-          <form onSubmit={handleSearch} className="mt-4 md:hidden">
-            <div className="relative w-full">
-              <Input
-                type="search"
-                placeholder="Rechercher..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-4 pr-12 py-3 input-search"
-              />
-              <Button 
-                type="submit" 
-                size="icon" 
-                className="absolute right-1 top-1/2 -translate-y-1/2 btn-primary h-8 w-8"
-              >
-                <Search className="h-4 w-4" />
-              </Button>
-            </div>
-          </form>
+          <div className="mt-4 md:hidden">
+            <GlobalSearch isMobile />
+          </div>
         </div>
 
         {/* Navigation */}

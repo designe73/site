@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useCart } from '@/hooks/useCart';
 import { formatPrice } from '@/lib/formatPrice';
 import ProductSpecs from '@/components/product/ProductSpecs';
+import CompatibleVehicles from '@/components/product/CompatibleVehicles';
 
 interface Product {
   id: string;
@@ -251,6 +252,9 @@ const ProductDetail = () => {
 
               {/* Specifications */}
               <ProductSpecs productId={product.id} categoryId={product.category?.id || null} />
+
+              {/* Compatible Vehicles */}
+              <CompatibleVehicles productId={product.id} />
 
               {/* Description */}
               {product.description && (
