@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { ShoppingCart, Trash2, Plus, Minus, ArrowLeft } from 'lucide-react';
+import { ShoppingCart, Trash2, Plus, Minus, ArrowLeft, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import Layout from '@/components/layout/Layout';
@@ -68,6 +68,23 @@ const Cart = () => {
 
   const shippingCost = totalPrice >= 50000 ? 0 : 3000;
   const finalTotal = totalPrice + shippingCost;
+
+  const handleWhatsAppOrder = () => {
+    let message = "Bonjour, je souhaite commander les produits suivants:\n\n";
+    items.forEach((item) => {
+      message += `• ${item.product?.name}\n`;
+      if (item.product?.brand) message += `  Marque: ${item.product.brand}\n`;
+      if (item.product?.reference) message += `  Réf: ${item.product.reference}\n`;
+      message += `  Quantité: ${item.quantity}\n`;
+      message += `  Prix unitaire: ${formatPrice(item.product?.price || 0)}\n\n`;
+    });
+    message += `Sous-total: ${formatPrice(totalPrice)}\n`;
+    message += `Livraison: ${shippingCost === 0 ? 'Gratuite' : formatPrice(shippingCost)}\n`;
+    message += `Total: ${formatPrice(finalTotal)}`;
+    
+    const whatsappUrl = `https://wa.me/221771234567?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+  };
 
   return (
     <>
@@ -180,9 +197,17 @@ const Cart = () => {
                   </div>
                 </div>
 
-                <Button asChild className="w-full btn-primary mt-6">
-                  <Link to="/checkout">Passer commande</Link>
+                <Button 
+                  onClick={handleWhatsAppOrder}
+                  className="w-full btn-primary mt-6"
+                >
+                  <MessageCircle className="h-5 w-5 mr-2" />
+                  Commander sur WhatsApp
                 </Button>
+                
+                <p className="text-xs text-muted-foreground text-center mt-3">
+                  Finalisez votre achat directement sur WhatsApp
+                </p>
               </Card>
             </div>
           </div>

@@ -122,12 +122,9 @@ const Footer = () => {
       {/* Bottom bar */}
       <div className="border-t border-dark-light">
         <div className="container py-4">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
-            <p>© 2024 AutoPièces Pro. Tous droits réservés.</p>
-            <div className="flex items-center gap-4">
-              <span>Paiement sécurisé</span>
-              <span>•</span>
-              <span>Satisfait ou remboursé</span>
+          <div className="flex flex-col md:flex-row items-center justify-center md:justify-between gap-4 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <p>© 2024 AutoPièces Pro. Tous droits réservés.</p>
               {isAdmin && (
                 <>
                   <span>•</span>
@@ -143,6 +140,11 @@ const Footer = () => {
                   </Button>
                 </>
               )}
+            </div>
+            <div className="flex items-center gap-4">
+              <span>Paiement sécurisé</span>
+              <span>•</span>
+              <span>Satisfait ou remboursé</span>
             </div>
           </div>
         </div>

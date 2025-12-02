@@ -66,20 +66,11 @@ const Header = () => {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
                   {user ? <>
-                      {isAdmin && (
-                        <DropdownMenuLabel className="text-primary font-bold flex items-center gap-2">
-                          <Settings className="h-4 w-4" />
-                          Administrateur
-                        </DropdownMenuLabel>
-                      )}
-                      <DropdownMenuItem asChild>
-                        <Link to="/compte">Mon compte</Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link to="/commandes">Mes commandes</Link>
-                      </DropdownMenuItem>
                       {isAdmin && <>
-                          <DropdownMenuSeparator />
+                          <DropdownMenuLabel className="text-primary font-bold flex items-center gap-2">
+                            <Settings className="h-4 w-4" />
+                            Administrateur
+                          </DropdownMenuLabel>
                           <DropdownMenuItem asChild>
                             <Link to="/admin" className="text-primary font-bold flex items-center gap-2">
                               <Settings className="h-4 w-4" />
@@ -97,11 +88,6 @@ const Header = () => {
                             </Link>
                           </DropdownMenuItem>
                           <DropdownMenuItem asChild>
-                            <Link to="/admin/commandes">
-                              Gestion des commandes
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem asChild>
                             <Link to="/admin/vehicules">
                               Gestion des véhicules
                             </Link>
@@ -111,8 +97,18 @@ const Header = () => {
                               Gestion des bannières
                             </Link>
                           </DropdownMenuItem>
+                          <DropdownMenuItem asChild>
+                            <Link to="/admin/commandes">
+                              Gestion des commandes
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem asChild>
+                            <Link to="/admin/utilisateurs">
+                              Gestion des utilisateurs
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
                         </>}
-                      <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={signOut}>
                         Déconnexion
                       </DropdownMenuItem>
