@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingCart, User, Menu, X, Phone, Settings } from 'lucide-react';
+import { ShoppingCart, Menu, X, Phone, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
@@ -55,14 +55,7 @@ const Header = () => {
               {/* User menu */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="relative">
-                    <User className="h-6 w-6" />
-                    {isAdmin && (
-                      <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[10px] bg-primary">
-                        A
-                      </Badge>
-                    )}
-                  </Button>
+                  
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
                   {user ? <>
@@ -180,18 +173,13 @@ const Header = () => {
                   Promotions
                 </Link>
               </li>
-              {isAdmin && (
-                <li className="ml-auto">
-                  <Link 
-                    to="/admin" 
-                    className="block px-4 py-2 nav-link hover:bg-dark-light rounded transition-colors flex items-center gap-2 bg-primary/10 text-primary font-bold border border-primary/20"
-                  >
+              {isAdmin && <li className="ml-auto">
+                  <Link to="/admin" className="block px-4 py-2 nav-link hover:bg-dark-light rounded transition-colors flex items-center gap-2 bg-primary/10 text-primary font-bold border border-primary/20">
                     <Settings className="h-4 w-4" />
                     <span className="hidden lg:inline">Administration</span>
                     <span className="lg:hidden">Admin</span>
                   </Link>
-                </li>
-              )}
+                </li>}
             </ul>
           </div>
         </nav>
