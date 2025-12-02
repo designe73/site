@@ -13,6 +13,7 @@ import Cart from "./pages/Cart";
 import Categories from "./pages/Categories";
 import CategoryProducts from "./pages/CategoryProducts";
 import ProductDetail from "./pages/ProductDetail";
+import SearchResults from "./pages/SearchResults";
 import AdminLayout from "./pages/admin/AdminLayout";
 import Dashboard from "./pages/admin/Dashboard";
 import Products from "./pages/admin/Products";
@@ -41,6 +42,7 @@ const App = () => (
                 <Route path="/categories" element={<Categories />} />
                 <Route path="/categorie/:slug" element={<CategoryProducts />} />
                 <Route path="/produit/:slug" element={<ProductDetail />} />
+                <Route path="/recherche" element={<SearchResults />} />
                 
                 {/* Admin routes */}
                 <Route path="/admin" element={<AdminLayout />}>
