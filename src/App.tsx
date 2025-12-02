@@ -15,6 +15,7 @@ import CategoryProducts from "./pages/CategoryProducts";
 import ProductDetail from "./pages/ProductDetail";
 import SearchResults from "./pages/SearchResults";
 import AdminLayout from "./pages/admin/AdminLayout";
+import AdminLogin from "./pages/admin/AdminLogin";
 import Dashboard from "./pages/admin/Dashboard";
 import Products from "./pages/admin/Products";
 import AdminCategories from "./pages/admin/Categories";
@@ -45,6 +46,9 @@ const App = () => (
                 <Route path="/categorie/:slug" element={<CategoryProducts />} />
                 <Route path="/produit/:slug" element={<ProductDetail />} />
                 <Route path="/recherche" element={<SearchResults />} />
+                
+                {/* Admin login route */}
+                <Route path="/admin/connexion" element={<AdminLogin />} />
                 
                 {/* Admin routes */}
                 <Route path="/admin" element={<AdminLayout />}>
