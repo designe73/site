@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ShoppingCart, Check } from 'lucide-react';
+import { ShoppingCart, Check, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatPrice } from '@/lib/formatPrice';
 import { useCart } from '@/hooks/useCart';
@@ -36,6 +36,14 @@ const ProductCard = ({
     e.preventDefault();
     e.stopPropagation();
     addToCart(id);
+  };
+
+  const handleWhatsApp = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const message = `Bonjour, je suis intéressé par ce produit:\n\n${name}\n${brand ? `Marque: ${brand}\n` : ''}${reference ? `Référence: ${reference}\n` : ''}Prix: ${formatPrice(price)}`;
+    const whatsappUrl = `https://wa.me/221771234567?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
   };
 
   return (
@@ -101,16 +109,27 @@ const ProductCard = ({
           )}
         </div>
 
-        {/* Add to cart button */}
-        <Button 
-          onClick={handleAddToCart}
-          disabled={stock === 0}
-          className="w-full btn-primary"
-          size="sm"
-        >
-          <ShoppingCart className="h-4 w-4 mr-2" />
-          Ajouter au panier
-        </Button>
+        {/* Action buttons */}
+        <div className="space-y-2">
+          <Button 
+            onClick={handleAddToCart}
+            disabled={stock === 0}
+            className="w-full btn-primary"
+            size="sm"
+          >
+            <ShoppingCart className="h-4 w-4 mr-2" />
+            Ajouter au panier
+          </Button>
+          <Button 
+            onClick={handleWhatsApp}
+            variant="outline"
+            className="w-full border-green-500 text-green-600 hover:bg-green-50"
+            size="sm"
+          >
+            <MessageCircle className="h-4 w-4 mr-2" />
+            Commander sur WhatsApp
+          </Button>
+        </div>
       </div>
     </Link>
   );

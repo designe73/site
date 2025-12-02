@@ -13,6 +13,8 @@ interface CartItem {
     price: number;
     image_url: string | null;
     stock: number;
+    brand?: string | null;
+    reference?: string | null;
   };
 }
 
@@ -52,7 +54,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
           name,
           price,
           image_url,
-          stock
+          stock,
+          brand,
+          reference
         )
       `)
       .eq('user_id', user.id);
