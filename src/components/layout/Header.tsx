@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingCart, User, Menu, X, Phone } from 'lucide-react';
+import { ShoppingCart, User, Menu, X, Phone, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { useCart } from '@/hooks/useCart';
 import GlobalSearch from '@/components/search/GlobalSearch';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
 const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const {
@@ -56,10 +57,21 @@ const Header = () => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="relative">
                     <User className="h-6 w-6" />
+                    {isAdmin && (
+                      <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[10px] bg-primary">
+                        A
+                      </Badge>
+                    )}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
                   {user ? <>
+                      {isAdmin && (
+                        <DropdownMenuLabel className="text-primary font-bold flex items-center gap-2">
+                          <Settings className="h-4 w-4" />
+                          Administrateur
+                        </DropdownMenuLabel>
+                      )}
                       <DropdownMenuItem asChild>
                         <Link to="/compte">Mon compte</Link>
                       </DropdownMenuItem>
@@ -69,8 +81,34 @@ const Header = () => {
                       {isAdmin && <>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem asChild>
-                            <Link to="/admin" className="text-primary font-medium">
-                              Administration
+                            <Link to="/admin" className="text-primary font-bold flex items-center gap-2">
+                              <Settings className="h-4 w-4" />
+                              Tableau de bord Admin
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem asChild>
+                            <Link to="/admin/produits">
+                              Gestion des produits
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem asChild>
+                            <Link to="/admin/categories">
+                              Gestion des catégories
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem asChild>
+                            <Link to="/admin/commandes">
+                              Gestion des commandes
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem asChild>
+                            <Link to="/admin/vehicules">
+                              Gestion des véhicules
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem asChild>
+                            <Link to="/admin/bannieres">
+                              Gestion des bannières
                             </Link>
                           </DropdownMenuItem>
                         </>}
@@ -146,6 +184,18 @@ const Header = () => {
                   Promotions
                 </Link>
               </li>
+              {isAdmin && (
+                <li className="ml-auto">
+                  <Link 
+                    to="/admin" 
+                    className="block px-4 py-2 nav-link hover:bg-dark-light rounded transition-colors flex items-center gap-2 bg-primary/10 text-primary font-bold border border-primary/20"
+                  >
+                    <Settings className="h-4 w-4" />
+                    <span className="hidden lg:inline">Administration</span>
+                    <span className="lg:hidden">Admin</span>
+                  </Link>
+                </li>
+              )}
             </ul>
           </div>
         </nav>
