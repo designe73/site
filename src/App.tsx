@@ -22,6 +22,7 @@ import Vehicles from "./pages/admin/Vehicles";
 import Banners from "./pages/admin/Banners";
 import Orders from "./pages/admin/Orders";
 import Users from "./pages/admin/Users";
+import Settings from "./pages/admin/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -54,6 +55,7 @@ const App = () => (
                   <Route path="bannieres" element={<Banners />} />
                   <Route path="commandes" element={<Orders />} />
                   <Route path="utilisateurs" element={<Users />} />
+                  <Route path="parametres" element={<Settings />} />
                 </Route>
                 
                 <Route path="*" element={<NotFound />} />
