@@ -1,7 +1,11 @@
 import { Link } from 'react-router-dom';
-import { Phone, Mail, MapPin, Facebook, Instagram, Twitter } from 'lucide-react';
+import { Phone, Mail, MapPin, Facebook, Instagram, Twitter, Settings } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { Button } from '@/components/ui/button';
 
 const Footer = () => {
+  const { isAdmin } = useAuth();
+  
   return (
     <footer className="bg-secondary text-secondary-foreground mt-auto">
       <div className="container py-12">
@@ -124,6 +128,21 @@ const Footer = () => {
               <span>Paiement sécurisé</span>
               <span>•</span>
               <span>Satisfait ou remboursé</span>
+              {isAdmin && (
+                <>
+                  <span>•</span>
+                  <Button 
+                    asChild 
+                    size="sm" 
+                    className="btn-primary h-8 gap-2"
+                  >
+                    <Link to="/admin">
+                      <Settings className="h-4 w-4" />
+                      Administration
+                    </Link>
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>

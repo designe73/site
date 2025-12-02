@@ -52,12 +52,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const checkAdminStatus = async (userId: string) => {
     const { data } = await supabase
-      .from('profiles')
-      .select('is_admin')
-      .eq('id', userId)
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .eq('role', 'admin')
       .maybeSingle();
     
-    setIsAdmin(data?.is_admin ?? false);
+    setIsAdmin(data?.role === 'admin');
   };
 
   const signIn = async (email: string, password: string) => {
