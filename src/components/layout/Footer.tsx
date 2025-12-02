@@ -125,21 +125,17 @@ const Footer = () => {
           <div className="flex flex-col md:flex-row items-center justify-center md:justify-between gap-4 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
               <p>© 2024 AutoPièces Pro. Tous droits réservés.</p>
-              {isAdmin && (
-                <>
-                  <span>•</span>
-                  <Button 
-                    asChild 
-                    size="sm" 
-                    className="btn-primary h-8 gap-2"
-                  >
-                    <Link to="/admin">
-                      <Settings className="h-4 w-4" />
-                      Administration
-                    </Link>
-                  </Button>
-                </>
-              )}
+              <span>•</span>
+              <Button 
+                asChild 
+                size="sm" 
+                className="btn-primary h-8 gap-2"
+              >
+                <Link to={isAdmin ? "/admin" : "/admin/connexion"}>
+                  <Settings className="h-4 w-4" />
+                  Administration
+                </Link>
+              </Button>
             </div>
             <div className="flex items-center gap-4">
               <span>Paiement sécurisé</span>
