@@ -17,6 +17,7 @@ const Auth = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   
@@ -39,7 +40,12 @@ const Auth = () => {
         setLoading(false);
         return;
       }
-      const { error } = await signUp(email, password, fullName);
+      if (!phone.trim()) {
+        toast.error('Veuillez entrer votre numéro de téléphone');
+        setLoading(false);
+        return;
+      }
+      const { error } = await signUp(email, password, fullName, phone);
       if (error) {
         if (error.message.includes('already registered')) {
           toast.error('Cet email est déjà utilisé');
@@ -84,21 +90,35 @@ const Auth = () => {
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
                 {isSignUp && (
-                  <div className="space-y-2">
-                    <Label htmlFor="fullName">Nom complet</Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="fullName">Nom complet</Label>
+                      <div className="relative">
+                        <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                        <Input
+                          id="fullName"
+                          type="text"
+                          placeholder="Votre nom complet"
+                          value={fullName}
+                          onChange={(e) => setFullName(e.target.value)}
+                          className="pl-10"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">Numéro de téléphone</Label>
                       <Input
-                        id="fullName"
-                        type="text"
-                        placeholder="Votre nom"
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
-                        className="pl-10"
+                        id="phone"
+                        type="tel"
+                        placeholder="+237 6XX XX XX XX"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
                         required
                       />
                     </div>
-                  </div>
+                  </>
                 )}
                 
                 <div className="space-y-2">
