@@ -510,6 +510,7 @@ export type Database = {
           currency: string | null
           id: string
           logo_url: string | null
+          maintenance_end_date: string | null
           maintenance_message: string | null
           maintenance_mode: boolean | null
           seo_description: string | null
@@ -526,6 +527,7 @@ export type Database = {
           currency?: string | null
           id?: string
           logo_url?: string | null
+          maintenance_end_date?: string | null
           maintenance_message?: string | null
           maintenance_mode?: boolean | null
           seo_description?: string | null
@@ -542,6 +544,7 @@ export type Database = {
           currency?: string | null
           id?: string
           logo_url?: string | null
+          maintenance_end_date?: string | null
           maintenance_message?: string | null
           maintenance_mode?: boolean | null
           seo_description?: string | null
