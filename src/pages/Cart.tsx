@@ -1,26 +1,67 @@
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { ShoppingCart, Trash2, Plus, Minus, ArrowLeft, MessageCircle } from 'lucide-react';
+import { ShoppingCart, Trash2, Plus, Minus, ArrowLeft, Truck, Loader2, MapPin, Phone, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import Layout from '@/components/layout/Layout';
 import { useCart } from '@/hooks/useCart';
 import { useAuth } from '@/hooks/useAuth';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
-import { useWhatsAppNumber } from '@/hooks/useWhatsAppNumber';
+import { supabase } from '@/integrations/supabase/client';
 import { formatPrice } from '@/lib/formatPrice';
+import { toast } from 'sonner';
+
+interface ShippingInfo {
+  full_name: string;
+  phone: string;
+  address: string;
+  city: string;
+}
 
 const Cart = () => {
-  const { items, loading, updateQuantity, removeFromCart, totalPrice } = useCart();
+  const navigate = useNavigate();
+  const { items, loading, updateQuantity, removeFromCart, totalPrice, clearCart } = useCart();
   const { user } = useAuth();
   const { settings } = useSiteSettings();
-  const { getWhatsAppUrl } = useWhatsAppNumber();
+  const [ordering, setOrdering] = useState(false);
+  const [shippingInfo, setShippingInfo] = useState<ShippingInfo>({
+    full_name: '',
+    phone: '',
+    address: '',
+    city: '',
+  });
+
+  // Load user profile info
+  useEffect(() => {
+    const loadProfile = async () => {
+      if (!user) return;
+      
+      const { data } = await supabase
+        .from('profiles')
+        .select('full_name, phone, address, city')
+        .eq('id', user.id)
+        .maybeSingle();
+      
+      if (data) {
+        setShippingInfo({
+          full_name: data.full_name || '',
+          phone: data.phone || '',
+          address: data.address || '',
+          city: data.city || '',
+        });
+      }
+    };
+    loadProfile();
+  }, [user]);
 
   if (!user) {
     return (
       <>
         <Helmet>
-          <title>Panier | AutoPièces Pro</title>
+          <title>Panier | {settings?.site_name || 'AutoPièces Pro'}</title>
         </Helmet>
         <Layout>
           <div className="container py-12 text-center">
@@ -54,7 +95,7 @@ const Cart = () => {
     return (
       <>
         <Helmet>
-          <title>Panier vide | AutoPièces Pro</title>
+          <title>Panier vide | {settings?.site_name || 'AutoPièces Pro'}</title>
         </Helmet>
         <Layout>
           <div className="container py-12 text-center">
@@ -73,27 +114,73 @@ const Cart = () => {
   const shippingCost = totalPrice >= 50000 ? 0 : 3000;
   const finalTotal = totalPrice + shippingCost;
 
-  const handleWhatsAppOrder = () => {
-    let message = "Bonjour, je souhaite commander les produits suivants:\n\n";
-    items.forEach((item) => {
-      message += `• ${item.product?.name}\n`;
-      if (item.product?.brand) message += `  Marque: ${item.product.brand}\n`;
-      if (item.product?.reference) message += `  Réf: ${item.product.reference}\n`;
-      message += `  Quantité: ${item.quantity}\n`;
-      message += `  Prix unitaire: ${formatPrice(item.product?.price || 0)}\n\n`;
-    });
-    message += `Sous-total: ${formatPrice(totalPrice)}\n`;
-    message += `Livraison: ${shippingCost === 0 ? 'Gratuite' : formatPrice(shippingCost)}\n`;
-    message += `Total: ${formatPrice(finalTotal)}`;
+  const handlePlaceOrder = async () => {
+    if (!shippingInfo.full_name || !shippingInfo.phone || !shippingInfo.address || !shippingInfo.city) {
+      toast.error('Veuillez remplir toutes les informations de livraison');
+      return;
+    }
+
+    setOrdering(true);
     
-    const whatsappUrl = getWhatsAppUrl(message);
-    window.open(whatsappUrl, '_blank');
+    try {
+      // Create order
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .insert({
+          user_id: user.id,
+          total: finalTotal,
+          status: 'pending',
+          phone: shippingInfo.phone,
+          shipping_address: shippingInfo.address,
+          shipping_city: shippingInfo.city,
+        })
+        .select()
+        .single();
+
+      if (orderError) throw orderError;
+
+      // Create order items
+      const orderItems = items.map(item => ({
+        order_id: order.id,
+        product_id: item.product_id,
+        quantity: item.quantity,
+        price: item.product?.price || 0,
+      }));
+
+      const { error: itemsError } = await supabase
+        .from('order_items')
+        .insert(orderItems);
+
+      if (itemsError) throw itemsError;
+
+      // Update profile with shipping info
+      await supabase
+        .from('profiles')
+        .update({
+          full_name: shippingInfo.full_name,
+          phone: shippingInfo.phone,
+          address: shippingInfo.address,
+          city: shippingInfo.city,
+        })
+        .eq('id', user.id);
+
+      // Clear cart
+      await clearCart();
+
+      toast.success('Commande passée avec succès !');
+      navigate('/mon-compte');
+    } catch (error) {
+      console.error('Error placing order:', error);
+      toast.error('Erreur lors de la commande. Veuillez réessayer.');
+    } finally {
+      setOrdering(false);
+    }
   };
 
   return (
     <>
       <Helmet>
-        <title>{`Panier (${items.length}) | AutoPièces Pro`}</title>
+        <title>{`Panier (${items.length}) | ${settings?.site_name || 'AutoPièces Pro'}`}</title>
       </Helmet>
       
       <Layout>
@@ -171,6 +258,72 @@ const Cart = () => {
                   </div>
                 </Card>
               ))}
+
+              {/* Shipping info form */}
+              <Card className="p-6">
+                <h2 className="font-roboto-condensed text-xl font-bold mb-4 flex items-center gap-2">
+                  <Truck className="h-5 w-5" />
+                  Informations de livraison
+                </h2>
+                
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="full_name">Nom complet *</Label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="full_name"
+                        value={shippingInfo.full_name}
+                        onChange={(e) => setShippingInfo({ ...shippingInfo, full_name: e.target.value })}
+                        placeholder="Votre nom complet"
+                        className="pl-10"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Téléphone *</Label>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="phone"
+                        value={shippingInfo.phone}
+                        onChange={(e) => setShippingInfo({ ...shippingInfo, phone: e.target.value })}
+                        placeholder="+221 77 123 45 67"
+                        className="pl-10"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="city">Ville *</Label>
+                    <div className="relative">
+                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="city"
+                        value={shippingInfo.city}
+                        onChange={(e) => setShippingInfo({ ...shippingInfo, city: e.target.value })}
+                        placeholder="Dakar"
+                        className="pl-10"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="address">Adresse complète *</Label>
+                    <Input
+                      id="address"
+                      value={shippingInfo.address}
+                      onChange={(e) => setShippingInfo({ ...shippingInfo, address: e.target.value })}
+                      placeholder="Rue, quartier, repères..."
+                      required
+                    />
+                  </div>
+                </div>
+              </Card>
             </div>
 
             {/* Order summary */}
@@ -202,15 +355,25 @@ const Cart = () => {
                 </div>
 
                 <Button 
-                  onClick={handleWhatsAppOrder}
+                  onClick={handlePlaceOrder}
                   className="w-full btn-primary mt-6"
+                  disabled={ordering}
                 >
-                  <MessageCircle className="h-5 w-5 mr-2" />
-                  Commander sur WhatsApp
+                  {ordering ? (
+                    <>
+                      <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                      Commande en cours...
+                    </>
+                  ) : (
+                    <>
+                      <Truck className="h-5 w-5 mr-2" />
+                      Commander - Paiement à la livraison
+                    </>
+                  )}
                 </Button>
                 
                 <p className="text-xs text-muted-foreground text-center mt-3">
-                  Finalisez votre achat directement sur WhatsApp
+                  Payez en espèces à la réception de votre commande
                 </p>
               </Card>
             </div>
