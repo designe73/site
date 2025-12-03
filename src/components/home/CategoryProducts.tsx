@@ -1,7 +1,15 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import ProductCard from '@/components/product/ProductCard';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from '@/components/ui/carousel';
 
 interface Product {
   id: string;
@@ -33,7 +41,6 @@ const CategoryProducts = () => {
 
   useEffect(() => {
     const fetchCategoriesWithProducts = async () => {
-      // Fetch all categories
       const { data: categories } = await supabase
         .from('categories')
         .select('id, name, slug, icon')
@@ -44,7 +51,6 @@ const CategoryProducts = () => {
         return;
       }
 
-      // For each category, fetch 4 products
       const categoriesData: CategoryWithProducts[] = [];
       
       for (const category of categories) {
@@ -52,7 +58,7 @@ const CategoryProducts = () => {
           .from('products')
           .select('id, name, slug, price, original_price, image_url, brand, reference, stock, is_promo')
           .eq('category_id', category.id)
-          .limit(4);
+          .limit(8);
 
         if (products && products.length > 0) {
           categoriesData.push({
@@ -75,10 +81,10 @@ const CategoryProducts = () => {
         {[...Array(3)].map((_, i) => (
           <section key={i} className="animate-pulse">
             <div className="h-8 bg-muted rounded w-48 mb-6" />
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="flex gap-4 overflow-hidden">
               {[...Array(4)].map((_, j) => (
-                <div key={j} className="card-product">
-                  <div className="aspect-square bg-muted" />
+                <div key={j} className="min-w-[200px] md:min-w-[250px]">
+                  <div className="aspect-square bg-muted rounded-lg" />
                   <div className="p-4 space-y-3">
                     <div className="h-4 bg-muted rounded w-3/4" />
                     <div className="h-4 bg-muted rounded w-1/2" />
@@ -112,23 +118,34 @@ const CategoryProducts = () => {
             </Link>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {category.products.map((product) => (
-              <ProductCard
-                key={product.id}
-                id={product.id}
-                name={product.name}
-                slug={product.slug}
-                price={product.price}
-                originalPrice={product.original_price}
-                imageUrl={product.image_url}
-                brand={product.brand}
-                reference={product.reference}
-                stock={product.stock}
-                isPromo={product.is_promo ?? false}
-              />
-            ))}
-          </div>
+          <Carousel
+            opts={{
+              align: 'start',
+              loop: false,
+            }}
+            className="w-full"
+          >
+            <CarouselContent className="-ml-2 md:-ml-4">
+              {category.products.map((product) => (
+                <CarouselItem key={product.id} className="pl-2 md:pl-4 basis-1/2 md:basis-1/3 lg:basis-1/4">
+                  <ProductCard
+                    id={product.id}
+                    name={product.name}
+                    slug={product.slug}
+                    price={product.price}
+                    originalPrice={product.original_price}
+                    imageUrl={product.image_url}
+                    brand={product.brand}
+                    reference={product.reference}
+                    stock={product.stock}
+                    isPromo={product.is_promo ?? false}
+                  />
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <CarouselPrevious className="hidden md:flex -left-4 bg-background border-border hover:bg-accent" />
+            <CarouselNext className="hidden md:flex -right-4 bg-background border-border hover:bg-accent" />
+          </Carousel>
         </section>
       ))}
     </div>
