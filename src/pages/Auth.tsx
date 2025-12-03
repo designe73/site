@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Eye, EyeOff, Phone, Lock, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -12,8 +12,8 @@ import { toast } from 'sonner';
 import Layout from '@/components/layout/Layout';
 
 const Auth = () => {
-  const [searchParams] = useSearchParams();
-  const isSignUp = searchParams.get('mode') === 'inscription';
+  const location = useLocation();
+  const isSignUp = location.pathname === '/inscription';
   
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
