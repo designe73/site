@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
+import { Eye, EyeOff, Phone, Lock, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { toast } from 'sonner';
 import Layout from '@/components/layout/Layout';
 
@@ -14,14 +15,14 @@ const Auth = () => {
   const [searchParams] = useSearchParams();
   const isSignUp = searchParams.get('mode') === 'inscription';
   
-  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
-  const [phone, setPhone] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   
   const { signIn, signUp, user } = useAuth();
+  const { settings } = useSiteSettings();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -30,9 +31,29 @@ const Auth = () => {
     }
   }, [user, navigate]);
 
+  // Convertir le numéro de téléphone en email fictif pour Supabase
+  const phoneToEmail = (phoneNumber: string) => {
+    const cleanPhone = phoneNumber.replace(/\s/g, '').replace(/^\+/, '');
+    return `${cleanPhone}@phone.senpieces.sn`;
+  };
+
+  const validatePhone = (phoneNumber: string) => {
+    const cleanPhone = phoneNumber.replace(/\s/g, '');
+    // Accepter les formats: +221XXXXXXXXX, 221XXXXXXXXX, 7XXXXXXXX
+    return /^(\+?221)?[0-9]{9}$/.test(cleanPhone);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+
+    if (!validatePhone(phone)) {
+      toast.error('Veuillez entrer un numéro de téléphone valide');
+      setLoading(false);
+      return;
+    }
+
+    const email = phoneToEmail(phone);
 
     if (isSignUp) {
       if (!fullName.trim()) {
@@ -40,15 +61,16 @@ const Auth = () => {
         setLoading(false);
         return;
       }
-      if (!phone.trim()) {
-        toast.error('Veuillez entrer votre numéro de téléphone');
+      if (password.length < 6) {
+        toast.error('Le mot de passe doit contenir au moins 6 caractères');
         setLoading(false);
         return;
       }
+      
       const { error } = await signUp(email, password, fullName, phone);
       if (error) {
         if (error.message.includes('already registered')) {
-          toast.error('Cet email est déjà utilisé');
+          toast.error('Ce numéro de téléphone est déjà utilisé');
         } else {
           toast.error(error.message);
         }
@@ -59,7 +81,7 @@ const Auth = () => {
     } else {
       const { error } = await signIn(email, password);
       if (error) {
-        toast.error('Email ou mot de passe incorrect');
+        toast.error('Numéro de téléphone ou mot de passe incorrect');
       } else {
         toast.success('Connexion réussie !');
         navigate('/');
@@ -71,7 +93,7 @@ const Auth = () => {
   return (
     <>
       <Helmet>
-        <title>{isSignUp ? 'Inscription' : 'Connexion'} | AutoPièces Pro</title>
+        <title>{isSignUp ? 'Inscription' : 'Connexion'} | {settings?.site_name || 'Senpieces'}</title>
       </Helmet>
       
       <Layout>
@@ -83,58 +105,45 @@ const Auth = () => {
               </CardTitle>
               <CardDescription>
                 {isSignUp 
-                  ? 'Rejoignez AutoPièces Pro pour profiter de nos offres' 
+                  ? `Rejoignez ${settings?.site_name || 'Senpieces'} pour profiter de nos offres` 
                   : 'Connectez-vous à votre compte'}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
                 {isSignUp && (
-                  <>
-                    <div className="space-y-2">
-                      <Label htmlFor="fullName">Nom complet</Label>
-                      <div className="relative">
-                        <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                        <Input
-                          id="fullName"
-                          type="text"
-                          placeholder="Votre nom complet"
-                          value={fullName}
-                          onChange={(e) => setFullName(e.target.value)}
-                          className="pl-10"
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Numéro de téléphone</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="fullName">Nom complet</Label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                       <Input
-                        id="phone"
-                        type="tel"
-                        placeholder="+237 6XX XX XX XX"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
+                        id="fullName"
+                        type="text"
+                        placeholder="Votre nom complet"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        className="pl-10"
                         required
                       />
                     </div>
-                  </>
+                  </div>
                 )}
                 
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="phone">Numéro de téléphone</Label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                     <Input
-                      id="email"
-                      type="email"
-                      placeholder="votre@email.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      id="phone"
+                      type="tel"
+                      placeholder="77 123 45 67"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
                       className="pl-10"
                       required
                     />
                   </div>
+                  <p className="text-xs text-muted-foreground">Format: 77 123 45 67 ou +221 77 123 45 67</p>
                 </div>
 
                 <div className="space-y-2">
@@ -159,6 +168,9 @@ const Auth = () => {
                       {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                     </button>
                   </div>
+                  {isSignUp && (
+                    <p className="text-xs text-muted-foreground">Minimum 6 caractères</p>
+                  )}
                 </div>
 
                 <Button type="submit" className="w-full btn-primary" disabled={loading}>
