@@ -35,6 +35,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { supabase } from '@/integrations/supabase/client';
 import { formatPrice } from '@/lib/formatPrice';
+import { compressImage, formatFileSize } from '@/lib/imageCompression';
 import { toast } from 'sonner';
 import ProductSpecsForm, {
   SpecType,
@@ -1467,31 +1468,54 @@ const Products = () => {
                     const file = e.target.files?.[0];
                     if (!file || !editingImageProductId) return;
                     
-                    const fileExt = file.name.split('.').pop();
-                    const fileName = `${editingImageProductId}-${Date.now()}.${fileExt}`;
+                    toast.loading('Compression et upload en cours...');
                     
-                    toast.loading('Upload en cours...');
-                    
-                    const { data, error } = await supabase.storage
-                      .from('product-images')
-                      .upload(fileName, file, { upsert: true });
-                    
-                    if (error) {
+                    try {
+                      // Compress image before upload
+                      const originalSize = file.size;
+                      const compressedFile = await compressImage(file, {
+                        maxWidth: 800,
+                        maxHeight: 800,
+                        quality: 0.85,
+                        format: 'image/webp',
+                      });
+                      const compressedSize = compressedFile.size;
+                      
+                      const fileName = `${editingImageProductId}-${Date.now()}.webp`;
+                      
+                      const { data, error } = await supabase.storage
+                        .from('product-images')
+                        .upload(fileName, compressedFile, { 
+                          upsert: true,
+                          contentType: 'image/webp'
+                        });
+                      
+                      if (error) {
+                        toast.dismiss();
+                        toast.error('Erreur lors de l\'upload');
+                        console.error(error);
+                        return;
+                      }
+                      
+                      const { data: urlData } = supabase.storage
+                        .from('product-images')
+                        .getPublicUrl(data.path);
+                      
+                      setEditingImageUrl(urlData.publicUrl);
                       toast.dismiss();
-                      toast.error('Erreur lors de l\'upload');
-                      console.error(error);
-                      return;
+                      
+                      const savedPercent = Math.round((1 - compressedSize / originalSize) * 100);
+                      toast.success(`Image uploadée (${formatFileSize(originalSize)} → ${formatFileSize(compressedSize)}, -${savedPercent}%)`);
+                    } catch (err) {
+                      toast.dismiss();
+                      toast.error('Erreur lors de la compression');
+                      console.error(err);
                     }
-                    
-                    const { data: urlData } = supabase.storage
-                      .from('product-images')
-                      .getPublicUrl(data.path);
-                    
-                    setEditingImageUrl(urlData.publicUrl);
-                    toast.dismiss();
-                    toast.success('Image uploadée');
                   }}
                 />
+                <p className="text-xs text-muted-foreground">
+                  Les images sont automatiquement compressées en WebP
+                </p>
               </div>
               
               <div className="relative">
