@@ -1,1 +1,4 @@
 project_id = "rwkmatdghpqfawtmuujb"
+
+[functions.import-catalogue]
+verify_jwt = false
