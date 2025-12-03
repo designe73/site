@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Plus, Pencil, Trash2, Search, X, Car, CheckSquare, Square, Filter, RotateCcw, ImageIcon, Loader2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, X, Car, CheckSquare, Square, Filter, RotateCcw, ImageIcon, Loader2, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -137,6 +137,11 @@ const Products = () => {
   const [filterStockStatus, setFilterStockStatus] = useState<'all' | 'in_stock' | 'low_stock' | 'out_of_stock'>('all');
   const [filterFeatured, setFilterFeatured] = useState<'all' | 'yes' | 'no'>('all');
   const [filterPromo, setFilterPromo] = useState<'all' | 'yes' | 'no'>('all');
+  const [filterHasImage, setFilterHasImage] = useState<'all' | 'with_image' | 'without_image'>('all');
+  
+  // Inline image edit state
+  const [editingImageProductId, setEditingImageProductId] = useState<string | null>(null);
+  const [editingImageUrl, setEditingImageUrl] = useState('');
   
   // Spec forms state
   const [specType, setSpecType] = useState<SpecType>(null);
@@ -670,10 +675,11 @@ const Products = () => {
     setFilterStockStatus('all');
     setFilterFeatured('all');
     setFilterPromo('all');
+    setFilterHasImage('all');
   };
 
   const hasActiveFilters = filterCategory || filterPriceMin || filterPriceMax || 
-    filterStockStatus !== 'all' || filterFeatured !== 'all' || filterPromo !== 'all';
+    filterStockStatus !== 'all' || filterFeatured !== 'all' || filterPromo !== 'all' || filterHasImage !== 'all';
 
   const filteredProducts = products.filter(p => {
     // Search filter
@@ -703,8 +709,13 @@ const Products = () => {
     if (filterPromo === 'yes') matchesPromo = p.is_promo === true;
     else if (filterPromo === 'no') matchesPromo = p.is_promo !== true;
     
+    // Image filter
+    let matchesImage = true;
+    if (filterHasImage === 'with_image') matchesImage = !!p.image_url;
+    else if (filterHasImage === 'without_image') matchesImage = !p.image_url;
+    
     return matchesSearch && matchesCategory && matchesPriceMin && matchesPriceMax && 
-      matchesStock && matchesFeatured && matchesPromo;
+      matchesStock && matchesFeatured && matchesPromo && matchesImage;
   });
 
   const filteredVehicles = vehicles.filter(v => 
@@ -1125,7 +1136,7 @@ const Products = () => {
             </div>
             
             {showFilters && (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 pt-4 border-t">
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 pt-4 border-t">
                 <div className="space-y-2">
                   <Label className="text-xs text-muted-foreground">Catégorie</Label>
                   <Select value={filterCategory} onValueChange={setFilterCategory}>
@@ -1203,6 +1214,20 @@ const Products = () => {
                     </SelectContent>
                   </Select>
                 </div>
+                
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">Image</Label>
+                  <Select value={filterHasImage} onValueChange={(v) => setFilterHasImage(v as typeof filterHasImage)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Tous" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tous</SelectItem>
+                      <SelectItem value="with_image">Avec image</SelectItem>
+                      <SelectItem value="without_image">Sans image</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             )}
             
@@ -1266,11 +1291,92 @@ const Products = () => {
                         />
                       </TableCell>
                       <TableCell>
-                        <div className="w-12 h-12 bg-muted rounded overflow-hidden">
-                          {product.image_url && (
-                            <img src={product.image_url} alt="" className="w-full h-full object-cover" />
-                          )}
-                        </div>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div 
+                              className="w-12 h-12 bg-muted rounded overflow-hidden cursor-pointer relative group"
+                              onClick={() => {
+                                setEditingImageProductId(product.id);
+                                setEditingImageUrl(product.image_url || '');
+                              }}
+                            >
+                              {product.image_url ? (
+                                <img src={product.image_url} alt="" className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                                  <ImageIcon className="h-5 w-5" />
+                                </div>
+                              )}
+                              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <Upload className="h-4 w-4 text-white" />
+                              </div>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>Cliquer pour modifier l'image</TooltipContent>
+                        </Tooltip>
+                        
+                        {editingImageProductId === product.id && (
+                          <Dialog open={true} onOpenChange={(open) => !open && setEditingImageProductId(null)}>
+                            <DialogContent className="max-w-md">
+                              <DialogHeader>
+                                <DialogTitle>Modifier l'image</DialogTitle>
+                              </DialogHeader>
+                              <div className="space-y-4">
+                                {editingImageUrl && (
+                                  <div className="w-full h-48 bg-muted rounded overflow-hidden">
+                                    <img src={editingImageUrl} alt="" className="w-full h-full object-contain" />
+                                  </div>
+                                )}
+                                <div className="space-y-2">
+                                  <Label>URL de l'image</Label>
+                                  <Input
+                                    value={editingImageUrl}
+                                    onChange={(e) => setEditingImageUrl(e.target.value)}
+                                    placeholder="https://..."
+                                  />
+                                </div>
+                                <div className="flex gap-2">
+                                  <Button
+                                    variant="outline"
+                                    className="flex-1"
+                                    onClick={() => handleSearchImage(product)}
+                                    disabled={searchingImageFor === product.id || !product.reference}
+                                  >
+                                    {searchingImageFor === product.id ? (
+                                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                    ) : (
+                                      <Search className="h-4 w-4 mr-2" />
+                                    )}
+                                    Chercher Oscaro
+                                  </Button>
+                                </div>
+                                <div className="flex justify-end gap-2">
+                                  <Button variant="outline" onClick={() => setEditingImageProductId(null)}>
+                                    Annuler
+                                  </Button>
+                                  <Button 
+                                    className="btn-primary"
+                                    onClick={async () => {
+                                      const { error } = await supabase
+                                        .from('products')
+                                        .update({ image_url: editingImageUrl || null })
+                                        .eq('id', product.id);
+                                      if (error) {
+                                        toast.error('Erreur lors de la modification');
+                                      } else {
+                                        toast.success('Image modifiée');
+                                        setEditingImageProductId(null);
+                                        fetchProducts();
+                                      }
+                                    }}
+                                  >
+                                    Enregistrer
+                                  </Button>
+                                </div>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                        )}
                       </TableCell>
                       <TableCell className="font-medium">{product.name}</TableCell>
                       <TableCell>{product.reference || '-'}</TableCell>
