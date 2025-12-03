@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Save, Loader2 } from 'lucide-react';
+import { Save, Loader2, AlertTriangle, Search } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -15,6 +17,11 @@ interface SiteSettings {
   contact_email: string;
   contact_phone: string;
   address: string;
+  maintenance_mode: boolean;
+  maintenance_message: string;
+  seo_title: string;
+  seo_description: string;
+  seo_keywords: string;
 }
 
 const Settings = () => {
@@ -27,6 +34,11 @@ const Settings = () => {
     contact_email: '',
     contact_phone: '+221 77 123 45 67',
     address: '',
+    maintenance_mode: false,
+    maintenance_message: 'Site en maintenance. Nous serons bientôt de retour.',
+    seo_title: '',
+    seo_description: '',
+    seo_keywords: '',
   });
 
   useEffect(() => {
@@ -49,6 +61,11 @@ const Settings = () => {
         contact_email: data.contact_email || '',
         contact_phone: data.contact_phone || '+221 77 123 45 67',
         address: data.address || '',
+        maintenance_mode: data.maintenance_mode || false,
+        maintenance_message: data.maintenance_message || 'Site en maintenance. Nous serons bientôt de retour.',
+        seo_title: data.seo_title || '',
+        seo_description: data.seo_description || '',
+        seo_keywords: data.seo_keywords || '',
       });
     }
     setLoading(false);
@@ -118,6 +135,101 @@ const Settings = () => {
 
         <form onSubmit={handleSubmit}>
           <div className="grid gap-6 max-w-4xl">
+            {/* Maintenance Mode */}
+            <Card className="border-destructive/50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-destructive" />
+                  Mode maintenance
+                </CardTitle>
+                <CardDescription>
+                  Activez le mode maintenance pour bloquer l'accès au site public
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="maintenance_mode">Activer le mode maintenance</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Les visiteurs verront une page de maintenance
+                    </p>
+                  </div>
+                  <Switch
+                    id="maintenance_mode"
+                    checked={settings.maintenance_mode}
+                    onCheckedChange={(checked) => setSettings({ ...settings, maintenance_mode: checked })}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="maintenance_message">Message de maintenance</Label>
+                  <Textarea
+                    id="maintenance_message"
+                    value={settings.maintenance_message}
+                    onChange={(e) => setSettings({ ...settings, maintenance_message: e.target.value })}
+                    placeholder="Site en maintenance. Nous serons bientôt de retour."
+                    rows={3}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* SEO Settings */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Search className="h-5 w-5" />
+                  Référencement SEO
+                </CardTitle>
+                <CardDescription>
+                  Optimisez votre site pour les moteurs de recherche
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="seo_title">Titre SEO</Label>
+                  <Input
+                    id="seo_title"
+                    value={settings.seo_title}
+                    onChange={(e) => setSettings({ ...settings, seo_title: e.target.value })}
+                    placeholder="AutoPièces Pro - Pièces Auto de Qualité au Sénégal"
+                    maxLength={60}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {settings.seo_title.length}/60 caractères (recommandé: max 60)
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="seo_description">Meta description</Label>
+                  <Textarea
+                    id="seo_description"
+                    value={settings.seo_description}
+                    onChange={(e) => setSettings({ ...settings, seo_description: e.target.value })}
+                    placeholder="Découvrez notre large gamme de pièces automobiles de qualité. Livraison rapide partout au Sénégal."
+                    rows={3}
+                    maxLength={160}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {settings.seo_description.length}/160 caractères (recommandé: max 160)
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="seo_keywords">Mots-clés</Label>
+                  <Input
+                    id="seo_keywords"
+                    value={settings.seo_keywords}
+                    onChange={(e) => setSettings({ ...settings, seo_keywords: e.target.value })}
+                    placeholder="pièces auto, automobile, Dakar, Sénégal, freinage, filtration"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Séparez les mots-clés par des virgules
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
             {/* General Information */}
             <Card>
               <CardHeader>
