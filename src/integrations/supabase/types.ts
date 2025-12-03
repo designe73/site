@@ -803,7 +803,63 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_site_settings: {
+        Row: {
+          account_enabled: boolean | null
+          address: string | null
+          contact_email: string | null
+          contact_phone: string | null
+          currency: string | null
+          id: string | null
+          logo_url: string | null
+          maintenance_end_date: string | null
+          maintenance_message: string | null
+          maintenance_mode: boolean | null
+          seo_description: string | null
+          seo_keywords: string | null
+          seo_title: string | null
+          site_name: string | null
+          whatsapp_enabled: boolean | null
+          whatsapp_number: string | null
+        }
+        Insert: {
+          account_enabled?: boolean | null
+          address?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          currency?: string | null
+          id?: string | null
+          logo_url?: string | null
+          maintenance_end_date?: string | null
+          maintenance_message?: string | null
+          maintenance_mode?: boolean | null
+          seo_description?: string | null
+          seo_keywords?: string | null
+          seo_title?: string | null
+          site_name?: string | null
+          whatsapp_enabled?: boolean | null
+          whatsapp_number?: string | null
+        }
+        Update: {
+          account_enabled?: boolean | null
+          address?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          currency?: string | null
+          id?: string | null
+          logo_url?: string | null
+          maintenance_end_date?: string | null
+          maintenance_message?: string | null
+          maintenance_mode?: boolean | null
+          seo_description?: string | null
+          seo_keywords?: string | null
+          seo_title?: string | null
+          site_name?: string | null
+          whatsapp_enabled?: boolean | null
+          whatsapp_number?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       has_any_role: {
