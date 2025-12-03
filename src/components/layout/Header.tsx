@@ -11,7 +11,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 
 const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { user, signOut, isAdmin } = useAuth();
+  const { user, signOut, isAdmin, isModerator } = useAuth();
   const { totalItems } = useCart();
   const { settings } = useSiteSettings();
   return <header className="sticky top-0 z-50 w-full">
@@ -64,11 +64,11 @@ const Header = () => {
                           </Link>
                         </DropdownMenuItem>
                       )}
-                      {isAdmin && <>
+                      {isModerator && <>
                           <DropdownMenuSeparator />
                           <DropdownMenuLabel className="text-primary font-bold flex items-center gap-2">
                             <Settings className="h-4 w-4" />
-                            Administrateur
+                            {isAdmin ? 'Administrateur' : 'Modérateur'}
                           </DropdownMenuLabel>
                           <DropdownMenuItem asChild>
                             <Link to="/admin" className="text-primary font-bold flex items-center gap-2">
@@ -101,11 +101,13 @@ const Header = () => {
                               Gestion des commandes
                             </Link>
                           </DropdownMenuItem>
-                          <DropdownMenuItem asChild>
-                            <Link to="/admin/utilisateurs">
-                              Gestion des utilisateurs
-                            </Link>
-                          </DropdownMenuItem>
+                          {isAdmin && (
+                            <DropdownMenuItem asChild>
+                              <Link to="/admin/utilisateurs">
+                                Gestion des utilisateurs
+                              </Link>
+                            </DropdownMenuItem>
+                          )}
                         </>}
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={signOut}>
@@ -179,7 +181,7 @@ const Header = () => {
                   Promotions
                 </Link>
               </li>
-              {isAdmin && <li className="ml-auto">
+              {isModerator && <li className="ml-auto">
                   <Link to="/admin" className="block px-4 py-2 nav-link hover:bg-dark-light rounded transition-colors flex items-center gap-2 bg-primary/10 text-primary font-bold border border-primary/20">
                     <Settings className="h-4 w-4" />
                     <span className="hidden lg:inline">Administration</span>
