@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Plus, Pencil, Trash2, Search, X, Car, CheckSquare, Square } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, X, Car, CheckSquare, Square, Filter, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -127,6 +127,15 @@ const Products = () => {
     is_featured: false,
     is_promo: false,
   });
+
+  // Advanced filters state
+  const [showFilters, setShowFilters] = useState(false);
+  const [filterCategory, setFilterCategory] = useState<string>('');
+  const [filterPriceMin, setFilterPriceMin] = useState('');
+  const [filterPriceMax, setFilterPriceMax] = useState('');
+  const [filterStockStatus, setFilterStockStatus] = useState<'all' | 'in_stock' | 'low_stock' | 'out_of_stock'>('all');
+  const [filterFeatured, setFilterFeatured] = useState<'all' | 'yes' | 'no'>('all');
+  const [filterPromo, setFilterPromo] = useState<'all' | 'yes' | 'no'>('all');
   
   // Spec forms state
   const [specType, setSpecType] = useState<SpecType>(null);
@@ -577,10 +586,49 @@ const Products = () => {
     return `${vehicle.brand} ${vehicle.model} ${vehicle.year}${vehicle.engine ? ` - ${vehicle.engine}` : ''}`;
   };
 
-  const filteredProducts = products.filter(p => 
-    p.name.toLowerCase().includes(search.toLowerCase()) ||
-    p.reference?.toLowerCase().includes(search.toLowerCase())
-  );
+  const resetFilters = () => {
+    setFilterCategory('');
+    setFilterPriceMin('');
+    setFilterPriceMax('');
+    setFilterStockStatus('all');
+    setFilterFeatured('all');
+    setFilterPromo('all');
+  };
+
+  const hasActiveFilters = filterCategory || filterPriceMin || filterPriceMax || 
+    filterStockStatus !== 'all' || filterFeatured !== 'all' || filterPromo !== 'all';
+
+  const filteredProducts = products.filter(p => {
+    // Search filter
+    const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase()) ||
+      p.reference?.toLowerCase().includes(search.toLowerCase());
+    
+    // Category filter
+    const matchesCategory = !filterCategory || p.category_id === filterCategory;
+    
+    // Price filters
+    const matchesPriceMin = !filterPriceMin || p.price >= parseFloat(filterPriceMin);
+    const matchesPriceMax = !filterPriceMax || p.price <= parseFloat(filterPriceMax);
+    
+    // Stock filter
+    let matchesStock = true;
+    if (filterStockStatus === 'out_of_stock') matchesStock = p.stock === 0;
+    else if (filterStockStatus === 'low_stock') matchesStock = p.stock > 0 && p.stock <= 5;
+    else if (filterStockStatus === 'in_stock') matchesStock = p.stock > 5;
+    
+    // Featured filter
+    let matchesFeatured = true;
+    if (filterFeatured === 'yes') matchesFeatured = p.is_featured === true;
+    else if (filterFeatured === 'no') matchesFeatured = p.is_featured !== true;
+    
+    // Promo filter
+    let matchesPromo = true;
+    if (filterPromo === 'yes') matchesPromo = p.is_promo === true;
+    else if (filterPromo === 'no') matchesPromo = p.is_promo !== true;
+    
+    return matchesSearch && matchesCategory && matchesPriceMin && matchesPriceMax && 
+      matchesStock && matchesFeatured && matchesPromo;
+  });
 
   const filteredVehicles = vehicles.filter(v => 
     getVehicleLabel(v).toLowerCase().includes(vehicleSearch.toLowerCase())
@@ -942,14 +990,124 @@ const Products = () => {
         )}
 
         <Card className="p-4 mb-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-            <Input
-              placeholder="Rechercher un produit..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-10"
-            />
+          <div className="space-y-4">
+            <div className="flex gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input
+                  placeholder="Rechercher un produit..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Button
+                variant={showFilters ? "default" : "outline"}
+                onClick={() => setShowFilters(!showFilters)}
+                className={showFilters ? "btn-primary" : ""}
+              >
+                <Filter className="h-4 w-4 mr-2" />
+                Filtres
+                {hasActiveFilters && (
+                  <Badge variant="secondary" className="ml-2 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                    !
+                  </Badge>
+                )}
+              </Button>
+              {hasActiveFilters && (
+                <Button variant="ghost" size="icon" onClick={resetFilters}>
+                  <RotateCcw className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+            
+            {showFilters && (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 pt-4 border-t">
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">Catégorie</Label>
+                  <Select value={filterCategory} onValueChange={setFilterCategory}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Toutes" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Toutes</SelectItem>
+                      {categories.map((cat) => (
+                        <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">Prix min (CFA)</Label>
+                  <Input
+                    type="number"
+                    placeholder="0"
+                    value={filterPriceMin}
+                    onChange={(e) => setFilterPriceMin(e.target.value)}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">Prix max (CFA)</Label>
+                  <Input
+                    type="number"
+                    placeholder="∞"
+                    value={filterPriceMax}
+                    onChange={(e) => setFilterPriceMax(e.target.value)}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">Stock</Label>
+                  <Select value={filterStockStatus} onValueChange={(v) => setFilterStockStatus(v as typeof filterStockStatus)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Tous" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tous</SelectItem>
+                      <SelectItem value="in_stock">En stock (&gt;5)</SelectItem>
+                      <SelectItem value="low_stock">Stock faible (1-5)</SelectItem>
+                      <SelectItem value="out_of_stock">Rupture (0)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">Vedette</Label>
+                  <Select value={filterFeatured} onValueChange={(v) => setFilterFeatured(v as typeof filterFeatured)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Tous" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tous</SelectItem>
+                      <SelectItem value="yes">Oui</SelectItem>
+                      <SelectItem value="no">Non</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">Promo</Label>
+                  <Select value={filterPromo} onValueChange={(v) => setFilterPromo(v as typeof filterPromo)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Tous" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tous</SelectItem>
+                      <SelectItem value="yes">Oui</SelectItem>
+                      <SelectItem value="no">Non</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+            
+            {hasActiveFilters && (
+              <div className="text-sm text-muted-foreground">
+                {filteredProducts.length} produit(s) trouvé(s)
+              </div>
+            )}
           </div>
         </Card>
 
