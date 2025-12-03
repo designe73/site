@@ -5,29 +5,47 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-const navItems = [
-  { icon: LayoutDashboard, label: 'Tableau de bord', path: '/admin' },
-  { icon: Package, label: 'Produits', path: '/admin/produits' },
-  { icon: FolderTree, label: 'Catégories', path: '/admin/categories' },
-  { icon: Car, label: 'Véhicules', path: '/admin/vehicules' },
-  { icon: Image, label: 'Bannières', path: '/admin/bannieres' },
-  { icon: ShoppingBag, label: 'Commandes', path: '/admin/commandes' },
-  { icon: Users, label: 'Utilisateurs', path: '/admin/utilisateurs' },
-  { icon: Upload, label: 'Import Catalogue', path: '/admin/import' },
-  { icon: UserCircle, label: 'Mon Profil', path: '/admin/profil' },
-  { icon: Settings, label: 'Paramètres', path: '/admin/parametres' },
-];
-
 const AdminLayout = () => {
-  const { user, isAdmin, loading, signOut } = useAuth();
+  const { user, isAdmin, isModerator, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Define nav items with role requirements
+  const navItems = [
+    { icon: LayoutDashboard, label: 'Tableau de bord', path: '/admin', roles: ['admin', 'moderator'] },
+    { icon: Package, label: 'Produits', path: '/admin/produits', roles: ['admin', 'moderator'] },
+    { icon: FolderTree, label: 'Catégories', path: '/admin/categories', roles: ['admin', 'moderator'] },
+    { icon: Car, label: 'Véhicules', path: '/admin/vehicules', roles: ['admin', 'moderator'] },
+    { icon: Image, label: 'Bannières', path: '/admin/bannieres', roles: ['admin', 'moderator'] },
+    { icon: ShoppingBag, label: 'Commandes', path: '/admin/commandes', roles: ['admin', 'moderator'] },
+    { icon: Users, label: 'Utilisateurs', path: '/admin/utilisateurs', roles: ['admin'] },
+    { icon: Upload, label: 'Import Catalogue', path: '/admin/import', roles: ['admin', 'moderator'] },
+    { icon: UserCircle, label: 'Mon Profil', path: '/admin/profil', roles: ['admin', 'moderator'] },
+    { icon: Settings, label: 'Paramètres', path: '/admin/parametres', roles: ['admin'] },
+  ];
+
+  // Filter nav items based on user role
+  const filteredNavItems = navItems.filter(item => {
+    if (isAdmin) return true;
+    if (isModerator) return item.roles.includes('moderator');
+    return false;
+  });
+
   useEffect(() => {
-    if (!loading && (!user || !isAdmin)) {
+    if (!loading && (!user || !isModerator)) {
       navigate('/connexion');
     }
-  }, [user, isAdmin, loading, navigate]);
+  }, [user, isModerator, loading, navigate]);
+
+  // Check if current route is allowed for this user
+  useEffect(() => {
+    if (!loading && user && isModerator && !isAdmin) {
+      const adminOnlyPaths = ['/admin/utilisateurs', '/admin/parametres'];
+      if (adminOnlyPaths.includes(location.pathname)) {
+        navigate('/admin');
+      }
+    }
+  }, [location.pathname, isAdmin, isModerator, loading, user, navigate]);
 
   if (loading) {
     return (
@@ -37,7 +55,7 @@ const AdminLayout = () => {
     );
   }
 
-  if (!user || !isAdmin) {
+  if (!user || !isModerator) {
     return null;
   }
 
@@ -56,7 +74,7 @@ const AdminLayout = () => {
 
         <nav className="flex-1 p-4">
           <ul className="space-y-1">
-            {navItems.map((item) => (
+            {filteredNavItems.map((item) => (
               <li key={item.path}>
                 <Link
                   to={item.path}
