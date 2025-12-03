@@ -792,10 +792,10 @@ const Products = () => {
         <title>Produits | Admin AutoPièces</title>
       </Helmet>
 
-      <div className="p-8">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="font-roboto-condensed text-3xl font-bold">Produits</h1>
-          <div className="flex gap-2">
+      <div className="p-4 lg:p-8">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 lg:mb-8">
+          <h1 className="font-roboto-condensed text-2xl lg:text-3xl font-bold">Produits</h1>
+          <div className="flex flex-wrap gap-2">
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button 
@@ -1320,8 +1320,8 @@ const Products = () => {
           </div>
         </Card>
 
-        <Card>
-          <Table>
+        <Card className="overflow-x-auto">
+          <Table className="min-w-[800px]">
             <TableHeader>
               <TableRow>
                 <TableHead className="w-10">
