@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Wrench } from 'lucide-react';
+import { Wrench, Eye } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface MaintenanceModeProps {
   children: React.ReactNode;
@@ -15,13 +16,14 @@ interface SiteSettings {
 const MaintenanceMode = ({ children }: MaintenanceModeProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [settings, setSettings] = useState<SiteSettings | null>(null);
+  const [previewMode, setPreviewMode] = useState(false);
 
   useEffect(() => {
     const fetchSettings = async () => {
       const { data } = await supabase
         .from('site_settings')
         .select('maintenance_mode, maintenance_message, site_name')
-        .single();
+        .maybeSingle();
 
       setSettings(data as SiteSettings | null);
       setIsLoading(false);
@@ -41,7 +43,7 @@ const MaintenanceMode = ({ children }: MaintenanceModeProps) => {
     );
   }
 
-  if (settings?.maintenance_mode && !isAdminRoute) {
+  if (settings?.maintenance_mode && !isAdminRoute && !previewMode) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
         <div className="text-center max-w-md">
@@ -54,9 +56,18 @@ const MaintenanceMode = ({ children }: MaintenanceModeProps) => {
           <p className="text-xl text-muted-foreground mb-6">
             {settings.maintenance_message || 'Site en maintenance. Nous serons bientôt de retour.'}
           </p>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground mb-6">
             Merci de votre patience
           </p>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setPreviewMode(true)}
+            className="text-xs"
+          >
+            <Eye className="h-3 w-3 mr-1" />
+            Prévisualiser le site
+          </Button>
         </div>
       </div>
     );

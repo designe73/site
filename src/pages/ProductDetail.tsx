@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { ChevronRight, ShoppingCart, Check, Minus, Plus, Truck, Shield, RotateCcw } from 'lucide-react';
+import { ChevronRight, ShoppingCart, Check, Minus, Plus, Truck, Shield, RotateCcw, MessageCircle } from 'lucide-react';
 import Layout from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { useCart } from '@/hooks/useCart';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { formatPrice } from '@/lib/formatPrice';
 import ProductSpecs from '@/components/product/ProductSpecs';
 import CompatibleVehicles from '@/components/product/CompatibleVehicles';
@@ -38,6 +39,7 @@ const ProductDetail = () => {
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const { addToCart } = useCart();
+  const { settings } = useSiteSettings();
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -70,6 +72,14 @@ const ProductDetail = () => {
     if (product) {
       addToCart(product.id, quantity);
     }
+  };
+
+  const handleWhatsApp = () => {
+    if (!product) return;
+    const phone = settings?.contact_phone?.replace(/\s/g, '').replace('+', '') || '221771234567';
+    const message = `Bonjour, je suis intéressé par ce produit:\n\n${product.name}\n${product.brand ? `Marque: ${product.brand}\n` : ''}${product.reference ? `Référence: ${product.reference}\n` : ''}Prix: ${formatPrice(product.price)}`;
+    const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
   };
 
   if (loading) {
@@ -232,6 +242,18 @@ const ProductDetail = () => {
                     Ajouter au panier
                   </Button>
                 </div>
+              )}
+
+              {/* WhatsApp order */}
+              {settings?.whatsapp_enabled && product.stock > 0 && (
+                <Button 
+                  onClick={handleWhatsApp}
+                  variant="outline"
+                  className="w-full border-green-500 text-green-600 hover:bg-green-50 py-6 text-lg"
+                >
+                  <MessageCircle className="h-5 w-5 mr-2" />
+                  Commander sur WhatsApp
+                </Button>
               )}
 
               {/* Features */}

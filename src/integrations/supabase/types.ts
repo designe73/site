@@ -503,6 +503,7 @@ export type Database = {
       }
       site_settings: {
         Row: {
+          account_enabled: boolean | null
           address: string | null
           contact_email: string | null
           contact_phone: string | null
@@ -515,8 +516,10 @@ export type Database = {
           seo_keywords: string | null
           seo_title: string | null
           site_name: string | null
+          whatsapp_enabled: boolean | null
         }
         Insert: {
+          account_enabled?: boolean | null
           address?: string | null
           contact_email?: string | null
           contact_phone?: string | null
@@ -529,8 +532,10 @@ export type Database = {
           seo_keywords?: string | null
           seo_title?: string | null
           site_name?: string | null
+          whatsapp_enabled?: boolean | null
         }
         Update: {
+          account_enabled?: boolean | null
           address?: string | null
           contact_email?: string | null
           contact_phone?: string | null
@@ -543,6 +548,7 @@ export type Database = {
           seo_keywords?: string | null
           seo_title?: string | null
           site_name?: string | null
+          whatsapp_enabled?: boolean | null
         }
         Relationships: []
       }
@@ -655,7 +661,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "user"
+      app_role: "admin" | "user" | "moderator"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -783,7 +789,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user"],
+      app_role: ["admin", "user", "moderator"],
     },
   },
 } as const

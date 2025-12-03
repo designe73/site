@@ -6,13 +6,21 @@ import CategoryGrid from '@/components/home/CategoryGrid';
 import FeaturedProducts from '@/components/home/FeaturedProducts';
 import PromoBanner from '@/components/home/PromoBanner';
 import CategoryProducts from '@/components/home/CategoryProducts';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 
 const Index = () => {
+  const { settings } = useSiteSettings();
+  
+  const seoTitle = settings?.seo_title || `${settings?.site_name || 'AutoPièces Pro'} - Pièces Auto de Qualité | Dakar, Sénégal`;
+  const seoDescription = settings?.seo_description || 'Achetez vos pièces automobiles en ligne. Large choix de pièces auto de qualité, livraison rapide partout au Sénégal. Freinage, filtration, moteur et plus.';
+  const seoKeywords = settings?.seo_keywords || 'pièces auto, automobile, Dakar, Sénégal, freinage, filtration';
+
   return (
     <>
       <Helmet>
-        <title>AutoPièces Pro - Pièces Auto de Qualité | Dakar, Sénégal</title>
-        <meta name="description" content="Achetez vos pièces automobiles en ligne. Large choix de pièces auto de qualité, livraison rapide partout au Sénégal. Freinage, filtration, moteur et plus." />
+        <title>{seoTitle}</title>
+        <meta name="description" content={seoDescription} />
+        <meta name="keywords" content={seoKeywords} />
       </Helmet>
       
       <Layout>
