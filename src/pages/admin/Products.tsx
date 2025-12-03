@@ -1456,6 +1456,53 @@ const Products = () => {
                   <img src={editingImageUrl} alt="" className="w-full h-full object-contain" />
                 </div>
               )}
+              
+              {/* Local file upload */}
+              <div className="space-y-2">
+                <Label>Télécharger une image</Label>
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file || !editingImageProductId) return;
+                    
+                    const fileExt = file.name.split('.').pop();
+                    const fileName = `${editingImageProductId}-${Date.now()}.${fileExt}`;
+                    
+                    toast.loading('Upload en cours...');
+                    
+                    const { data, error } = await supabase.storage
+                      .from('product-images')
+                      .upload(fileName, file, { upsert: true });
+                    
+                    if (error) {
+                      toast.dismiss();
+                      toast.error('Erreur lors de l\'upload');
+                      console.error(error);
+                      return;
+                    }
+                    
+                    const { data: urlData } = supabase.storage
+                      .from('product-images')
+                      .getPublicUrl(data.path);
+                    
+                    setEditingImageUrl(urlData.publicUrl);
+                    toast.dismiss();
+                    toast.success('Image uploadée');
+                  }}
+                />
+              </div>
+              
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">ou</span>
+                </div>
+              </div>
+              
               <div className="space-y-2">
                 <Label>URL de l'image</Label>
                 <Input
