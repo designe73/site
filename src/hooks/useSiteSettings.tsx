@@ -10,6 +10,7 @@ interface SiteSettings {
   address: string;
   maintenance_mode: boolean;
   maintenance_message: string;
+  maintenance_end_date: string | null;
   seo_title: string;
   seo_description: string;
   seo_keywords: string;
@@ -32,6 +33,7 @@ const defaultSettings: SiteSettings = {
   address: '',
   maintenance_mode: false,
   maintenance_message: 'Site en maintenance. Nous serons bientôt de retour.',
+  maintenance_end_date: null,
   seo_title: '',
   seo_description: '',
   seo_keywords: '',
@@ -68,6 +70,7 @@ export const SiteSettingsProvider = ({ children }: { children: ReactNode }) => {
         address: data.address || defaultSettings.address,
         maintenance_mode: data.maintenance_mode ?? defaultSettings.maintenance_mode,
         maintenance_message: data.maintenance_message || defaultSettings.maintenance_message,
+        maintenance_end_date: data.maintenance_end_date || defaultSettings.maintenance_end_date,
         seo_title: data.seo_title || defaultSettings.seo_title,
         seo_description: data.seo_description || defaultSettings.seo_description,
         seo_keywords: data.seo_keywords || defaultSettings.seo_keywords,

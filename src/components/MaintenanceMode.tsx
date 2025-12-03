@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Wrench, AlertTriangle } from 'lucide-react';
+import { Wrench, AlertTriangle, Clock } from 'lucide-react';
 
 interface MaintenanceModeProps {
   children: React.ReactNode;
@@ -10,24 +10,24 @@ interface SiteSettings {
   maintenance_mode: boolean;
   maintenance_message: string;
   site_name: string;
+  maintenance_end_date: string | null;
 }
 
 const MaintenanceMode = ({ children }: MaintenanceModeProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [settings, setSettings] = useState<SiteSettings | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [countdown, setCountdown] = useState<{ days: number; hours: number; minutes: number; seconds: number } | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
-      // Fetch settings
       const { data: settingsData } = await supabase
         .from('site_settings')
-        .select('maintenance_mode, maintenance_message, site_name')
+        .select('maintenance_mode, maintenance_message, site_name, maintenance_end_date')
         .maybeSingle();
 
       setSettings(settingsData as SiteSettings | null);
 
-      // Check if user is admin
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const { data: roleData } = await supabase
@@ -46,7 +46,37 @@ const MaintenanceMode = ({ children }: MaintenanceModeProps) => {
     fetchData();
   }, []);
 
-  // Allow admin routes even in maintenance mode
+  // Countdown timer
+  useEffect(() => {
+    if (!settings?.maintenance_end_date) {
+      setCountdown(null);
+      return;
+    }
+
+    const calculateCountdown = () => {
+      const endDate = new Date(settings.maintenance_end_date!);
+      const now = new Date();
+      const diff = endDate.getTime() - now.getTime();
+
+      if (diff <= 0) {
+        setCountdown(null);
+        return;
+      }
+
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+      setCountdown({ days, hours, minutes, seconds });
+    };
+
+    calculateCountdown();
+    const interval = setInterval(calculateCountdown, 1000);
+
+    return () => clearInterval(interval);
+  }, [settings?.maintenance_end_date]);
+
   const isAdminRoute = window.location.pathname.startsWith('/admin');
 
   if (isLoading) {
@@ -57,7 +87,6 @@ const MaintenanceMode = ({ children }: MaintenanceModeProps) => {
     );
   }
 
-  // Allow admins and moderators to view the site in maintenance mode
   if (settings?.maintenance_mode && !isAdminRoute && !isAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
@@ -71,6 +100,36 @@ const MaintenanceMode = ({ children }: MaintenanceModeProps) => {
           <p className="text-xl text-muted-foreground mb-6">
             {settings.maintenance_message || 'Site en maintenance. Nous serons bientôt de retour.'}
           </p>
+          
+          {countdown && (
+            <div className="mb-6">
+              <div className="flex items-center justify-center gap-2 text-muted-foreground mb-3">
+                <Clock className="h-4 w-4" />
+                <span className="text-sm">Retour estimé dans</span>
+              </div>
+              <div className="flex justify-center gap-3">
+                {countdown.days > 0 && (
+                  <div className="bg-card border rounded-lg p-3 min-w-[70px]">
+                    <div className="text-2xl font-bold text-primary">{countdown.days}</div>
+                    <div className="text-xs text-muted-foreground">jours</div>
+                  </div>
+                )}
+                <div className="bg-card border rounded-lg p-3 min-w-[70px]">
+                  <div className="text-2xl font-bold text-primary">{countdown.hours.toString().padStart(2, '0')}</div>
+                  <div className="text-xs text-muted-foreground">heures</div>
+                </div>
+                <div className="bg-card border rounded-lg p-3 min-w-[70px]">
+                  <div className="text-2xl font-bold text-primary">{countdown.minutes.toString().padStart(2, '0')}</div>
+                  <div className="text-xs text-muted-foreground">minutes</div>
+                </div>
+                <div className="bg-card border rounded-lg p-3 min-w-[70px]">
+                  <div className="text-2xl font-bold text-primary">{countdown.seconds.toString().padStart(2, '0')}</div>
+                  <div className="text-xs text-muted-foreground">secondes</div>
+                </div>
+              </div>
+            </div>
+          )}
+          
           <p className="text-sm text-muted-foreground">
             Merci de votre patience
           </p>
@@ -79,7 +138,6 @@ const MaintenanceMode = ({ children }: MaintenanceModeProps) => {
     );
   }
 
-  // Show maintenance banner for admins viewing the site
   if (settings?.maintenance_mode && isAdmin && !isAdminRoute) {
     return (
       <>

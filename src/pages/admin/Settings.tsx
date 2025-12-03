@@ -19,6 +19,7 @@ interface SiteSettings {
   address: string;
   maintenance_mode: boolean;
   maintenance_message: string;
+  maintenance_end_date: string;
   seo_title: string;
   seo_description: string;
   seo_keywords: string;
@@ -29,7 +30,7 @@ interface SiteSettings {
 const Settings = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [settings, setSettings] = useState<SiteSettings>({
+const [settings, setSettings] = useState<SiteSettings>({
     site_name: 'AutoPièces Pro',
     logo_url: '',
     currency: 'CFA',
@@ -38,6 +39,7 @@ const Settings = () => {
     address: '',
     maintenance_mode: false,
     maintenance_message: 'Site en maintenance. Nous serons bientôt de retour.',
+    maintenance_end_date: '',
     seo_title: '',
     seo_description: '',
     seo_keywords: '',
@@ -67,6 +69,7 @@ const Settings = () => {
         address: data.address || '',
         maintenance_mode: data.maintenance_mode || false,
         maintenance_message: data.maintenance_message || 'Site en maintenance. Nous serons bientôt de retour.',
+        maintenance_end_date: data.maintenance_end_date ? new Date(data.maintenance_end_date).toISOString().slice(0, 16) : '',
         seo_title: data.seo_title || '',
         seo_description: data.seo_description || '',
         seo_keywords: data.seo_keywords || '',
@@ -81,6 +84,12 @@ const Settings = () => {
     e.preventDefault();
     setSaving(true);
 
+    // Prepare settings for save - convert empty date to null
+    const settingsToSave = {
+      ...settings,
+      maintenance_end_date: settings.maintenance_end_date ? new Date(settings.maintenance_end_date).toISOString() : null,
+    };
+
     // Check if settings exist
     const { data: existing } = await supabase
       .from('site_settings')
@@ -92,14 +101,14 @@ const Settings = () => {
       // Update existing settings
       const { error: updateError } = await supabase
         .from('site_settings')
-        .update(settings)
+        .update(settingsToSave)
         .eq('id', existing.id);
       error = updateError;
     } else {
       // Insert new settings
       const { error: insertError } = await supabase
         .from('site_settings')
-        .insert(settings);
+        .insert(settingsToSave);
       error = insertError;
     }
 
@@ -176,6 +185,19 @@ const Settings = () => {
                     placeholder="Site en maintenance. Nous serons bientôt de retour."
                     rows={3}
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="maintenance_end_date">Date de fin estimée</Label>
+                  <Input
+                    id="maintenance_end_date"
+                    type="datetime-local"
+                    value={settings.maintenance_end_date}
+                    onChange={(e) => setSettings({ ...settings, maintenance_end_date: e.target.value })}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Un compteur sera affiché aux visiteurs si défini
+                  </p>
                 </div>
               </CardContent>
             </Card>
