@@ -16,6 +16,8 @@ import ProductDetail from "./pages/ProductDetail";
 import SearchResults from "./pages/SearchResults";
 import AdminLayout from "./pages/admin/AdminLayout";
 import AdminLogin from "./pages/admin/AdminLogin";
+import ForgotPassword from "./pages/admin/ForgotPassword";
+import ResetPassword from "./pages/admin/ResetPassword";
 import Dashboard from "./pages/admin/Dashboard";
 import Products from "./pages/admin/Products";
 import AdminCategories from "./pages/admin/Categories";
@@ -47,8 +49,10 @@ const App = () => (
                 <Route path="/produit/:slug" element={<ProductDetail />} />
                 <Route path="/recherche" element={<SearchResults />} />
                 
-                {/* Admin login route */}
+                {/* Admin auth routes */}
                 <Route path="/admin/connexion" element={<AdminLogin />} />
+                <Route path="/admin/mot-de-passe-oublie" element={<ForgotPassword />} />
+                <Route path="/admin/reset-password" element={<ResetPassword />} />
                 
                 {/* Admin routes */}
                 <Route path="/admin" element={<AdminLayout />}>
