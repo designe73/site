@@ -49,10 +49,32 @@ const Header = () => {
 
             {/* Actions */}
             <div className="flex items-center gap-2">
+              {/* Mon compte link when logged in */}
+              {user && settings?.account_enabled && (
+                <Button variant="ghost" size="sm" asChild className="hidden sm:flex items-center gap-2">
+                  <Link to="/mon-compte">
+                    <User className="h-5 w-5" />
+                    <span className="hidden md:inline">Mon compte</span>
+                  </Link>
+                </Button>
+              )}
+
+              {/* Login link when not logged in */}
+              {!user && (
+                <Button variant="ghost" size="sm" asChild className="hidden sm:flex items-center gap-2">
+                  <Link to="/connexion">
+                    <User className="h-5 w-5" />
+                    <span className="hidden md:inline">Connexion</span>
+                  </Link>
+                </Button>
+              )}
+
               {/* User menu */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  
+                  <Button variant="ghost" size="icon" className="sm:hidden">
+                    <User className="h-5 w-5" />
+                  </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
                   {user ? <>

@@ -518,6 +518,7 @@ export type Database = {
           seo_title: string | null
           site_name: string | null
           whatsapp_enabled: boolean | null
+          whatsapp_number: string | null
         }
         Insert: {
           account_enabled?: boolean | null
@@ -535,6 +536,7 @@ export type Database = {
           seo_title?: string | null
           site_name?: string | null
           whatsapp_enabled?: boolean | null
+          whatsapp_number?: string | null
         }
         Update: {
           account_enabled?: boolean | null
@@ -552,6 +554,7 @@ export type Database = {
           seo_title?: string | null
           site_name?: string | null
           whatsapp_enabled?: boolean | null
+          whatsapp_number?: string | null
         }
         Relationships: []
       }
