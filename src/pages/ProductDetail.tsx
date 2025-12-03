@@ -78,7 +78,7 @@ const ProductDetail = () => {
 
   const handleWhatsApp = () => {
     if (!product) return;
-    const phone = settings?.contact_phone?.replace(/\s/g, '').replace('+', '') || '221771234567';
+    const phone = (settings?.whatsapp_number || settings?.contact_phone)?.replace(/\s/g, '').replace('+', '') || '221771234567';
     const message = `Bonjour, je suis intéressé par ce produit:\n\n${product.name}\n${product.brand ? `Marque: ${product.brand}\n` : ''}${product.reference ? `Référence: ${product.reference}\n` : ''}Prix: ${formatPrice(product.price)}`;
     const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');

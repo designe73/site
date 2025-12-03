@@ -43,7 +43,7 @@ const ProductCard = ({
   const handleWhatsApp = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const phone = settings?.contact_phone?.replace(/\s/g, '').replace('+', '') || '221771234567';
+    const phone = (settings?.whatsapp_number || settings?.contact_phone)?.replace(/\s/g, '').replace('+', '') || '221771234567';
     const message = `Bonjour, je suis intéressé par ce produit:\n\n${name}\n${brand ? `Marque: ${brand}\n` : ''}${reference ? `Référence: ${reference}\n` : ''}Prix: ${formatPrice(price)}`;
     const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');

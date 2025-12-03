@@ -7,6 +7,7 @@ interface SiteSettings {
   currency: string;
   contact_email: string;
   contact_phone: string;
+  whatsapp_number: string;
   address: string;
   maintenance_mode: boolean;
   maintenance_message: string;
@@ -30,6 +31,7 @@ const defaultSettings: SiteSettings = {
   currency: 'CFA',
   contact_email: '',
   contact_phone: '+221 77 123 45 67',
+  whatsapp_number: '+221 77 123 45 67',
   address: '',
   maintenance_mode: false,
   maintenance_message: 'Site en maintenance. Nous serons bientôt de retour.',
@@ -67,6 +69,7 @@ export const SiteSettingsProvider = ({ children }: { children: ReactNode }) => {
         currency: data.currency || defaultSettings.currency,
         contact_email: data.contact_email || defaultSettings.contact_email,
         contact_phone: data.contact_phone || defaultSettings.contact_phone,
+        whatsapp_number: data.whatsapp_number || defaultSettings.whatsapp_number,
         address: data.address || defaultSettings.address,
         maintenance_mode: data.maintenance_mode ?? defaultSettings.maintenance_mode,
         maintenance_message: data.maintenance_message || defaultSettings.maintenance_message,

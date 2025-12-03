@@ -16,6 +16,7 @@ interface SiteSettings {
   currency: string;
   contact_email: string;
   contact_phone: string;
+  whatsapp_number: string;
   address: string;
   maintenance_mode: boolean;
   maintenance_message: string;
@@ -36,6 +37,7 @@ const [settings, setSettings] = useState<SiteSettings>({
     currency: 'CFA',
     contact_email: '',
     contact_phone: '+221 77 123 45 67',
+    whatsapp_number: '+221 77 123 45 67',
     address: '',
     maintenance_mode: false,
     maintenance_message: 'Site en maintenance. Nous serons bientôt de retour.',
@@ -66,6 +68,7 @@ const [settings, setSettings] = useState<SiteSettings>({
         currency: data.currency || 'CFA',
         contact_email: data.contact_email || '',
         contact_phone: data.contact_phone || '+221 77 123 45 67',
+        whatsapp_number: data.whatsapp_number || '+221 77 123 45 67',
         address: data.address || '',
         maintenance_mode: data.maintenance_mode || false,
         maintenance_message: data.maintenance_message || 'Site en maintenance. Nous serons bientôt de retour.',
@@ -365,15 +368,25 @@ const [settings, setSettings] = useState<SiteSettings>({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="contact_phone">Téléphone / WhatsApp</Label>
+                  <Label htmlFor="contact_phone">Téléphone de contact</Label>
                   <Input
                     id="contact_phone"
                     value={settings.contact_phone}
                     onChange={(e) => setSettings({ ...settings, contact_phone: e.target.value })}
                     placeholder="+221 77 123 45 67"
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="whatsapp_number">Numéro WhatsApp (commandes)</Label>
+                  <Input
+                    id="whatsapp_number"
+                    value={settings.whatsapp_number}
+                    onChange={(e) => setSettings({ ...settings, whatsapp_number: e.target.value })}
+                    placeholder="+221 77 123 45 67"
+                  />
                   <p className="text-xs text-muted-foreground">
-                    Ce numéro sera utilisé pour les commandes WhatsApp
+                    Ce numéro sera utilisé pour recevoir les commandes via WhatsApp
                   </p>
                 </div>
 
