@@ -67,10 +67,10 @@ const App = () => (
                         <Route path="/" element={<Index />} />
                         <Route path="/connexion" element={<Auth />} />
                         <Route path="/inscription" element={<Auth />} />
-
+                        
                         {/* ... Remets toutes tes routes ici ... */}
                         {/* Je mets juste un exemple pour que le code soit valide */}
-                        <Route path="*" element={<NotFound />} />
+                         <Route path="*" element={<NotFound />} />
                       </Routes>
                     </Suspense>
                   </MaintenanceMode>
