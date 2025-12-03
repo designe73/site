@@ -14,7 +14,7 @@ export default defineConfig(({ mode }) => ({
     react(),
     mode === "development" && componentTagger(),
     VitePWA({
-      registerType: "autoUpdate",
+      registerType: "prompt", // Changed from autoUpdate to prevent refresh loops
       includeAssets: ["favicon.ico", "pwa-icon-192.png", "pwa-icon-512.png"],
       manifest: {
         name: "SenPièces - Pièces Auto au Sénégal",
@@ -44,9 +44,21 @@ export default defineConfig(({ mode }) => ({
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,webp,jpg,jpeg,woff,woff2}"],
         cleanupOutdatedCaches: true,
-        skipWaiting: true,
-        clientsClaim: true,
+        skipWaiting: false, // Changed to prevent refresh loops
+        clientsClaim: false, // Changed to prevent refresh loops
+        // Exclude index.html from precaching to prevent navigation loops
+        navigateFallback: null,
+        navigateFallbackDenylist: [/.*/],
         runtimeCaching: [
+          {
+            // Navigation requests - always network first
+            urlPattern: ({ request }) => request.mode === 'navigate',
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "pages-cache",
+              networkTimeoutSeconds: 3,
+            },
+          },
           {
             urlPattern: /^https:\/\/.*\.supabase\.co\/rest\/.*/i,
             handler: "NetworkFirst",
@@ -61,7 +73,7 @@ export default defineConfig(({ mode }) => ({
           },
           {
             urlPattern: /^https:\/\/.*\.supabase\.co\/storage\/.*/i,
-            handler: "CacheFirst",
+            handler: "StaleWhileRevalidate", // Changed from CacheFirst for better updates
             options: {
               cacheName: "supabase-storage-cache",
               expiration: {
@@ -72,7 +84,7 @@ export default defineConfig(({ mode }) => ({
           },
           {
             urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)$/i,
-            handler: "CacheFirst",
+            handler: "StaleWhileRevalidate", // Changed from CacheFirst
             options: {
               cacheName: "images-cache",
               expiration: {
