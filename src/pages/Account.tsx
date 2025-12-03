@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
-import { User, Package, MapPin, Phone, Mail, Save, Loader2, LogOut } from 'lucide-react';
+import { User, Package, MapPin, Phone, Save, Loader2, LogOut } from 'lucide-react';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -193,19 +193,6 @@ const Account = () => {
                 <CardContent>
                   <form onSubmit={handleSaveProfile} className="space-y-4">
                     <div className="grid gap-4 md:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label htmlFor="email">Email</Label>
-                        <div className="flex items-center gap-2">
-                          <Mail className="h-4 w-4 text-muted-foreground" />
-                          <Input
-                            id="email"
-                            value={user?.email || ''}
-                            disabled
-                            className="bg-muted"
-                          />
-                        </div>
-                      </div>
-
                       <div className="space-y-2">
                         <Label htmlFor="full_name">Nom complet</Label>
                         <div className="flex items-center gap-2">
