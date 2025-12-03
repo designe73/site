@@ -1,17 +1,19 @@
 import { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
-import { User, Package, MapPin, Phone, Save, Loader2, LogOut } from 'lucide-react';
+import { User, Package, MapPin, Phone, Save, Loader2, LogOut, FileText, Download, Eye } from 'lucide-react';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
+import InvoiceGenerator from '@/components/invoice/InvoiceGenerator';
 
 interface Profile {
   full_name: string;
@@ -25,6 +27,19 @@ interface Order {
   created_at: string;
   total: number;
   status: string;
+  phone: string | null;
+  shipping_address: string | null;
+  shipping_city: string | null;
+}
+
+interface OrderItem {
+  id: string;
+  quantity: number;
+  price: number;
+  product: {
+    name: string;
+    reference: string | null;
+  } | null;
 }
 
 const Account = () => {
@@ -40,6 +55,9 @@ const Account = () => {
     city: '',
   });
   const [orders, setOrders] = useState<Order[]>([]);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
+  const [invoiceOpen, setInvoiceOpen] = useState(false);
 
   useEffect(() => {
     if (!settings?.account_enabled) {
@@ -83,7 +101,7 @@ const Account = () => {
 
     const { data, error } = await supabase
       .from('orders')
-      .select('id, created_at, total, status')
+      .select('id, created_at, total, status, phone, shipping_address, shipping_city')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
 
@@ -92,6 +110,50 @@ const Account = () => {
     } else {
       setOrders(data || []);
     }
+  };
+
+  const fetchOrderItems = async (orderId: string) => {
+    const { data } = await supabase
+      .from('order_items')
+      .select(`
+        id, quantity, price,
+        product:products(name, reference)
+      `)
+      .eq('order_id', orderId);
+
+    setOrderItems(data || []);
+  };
+
+  const handleViewInvoice = async (order: Order) => {
+    setSelectedOrder(order);
+    await fetchOrderItems(order.id);
+    setInvoiceOpen(true);
+  };
+
+  const getInvoiceData = () => {
+    if (!selectedOrder) return null;
+
+    return {
+      invoiceNumber: `FAC-${selectedOrder.id.slice(0, 8).toUpperCase()}`,
+      orderDate: selectedOrder.created_at,
+      customerName: profile.full_name || 'Client',
+      customerPhone: selectedOrder.phone || profile.phone || '',
+      customerAddress: selectedOrder.shipping_address || profile.address || '',
+      customerCity: selectedOrder.shipping_city || profile.city || '',
+      items: orderItems.map(item => ({
+        name: item.product?.name || 'Produit',
+        reference: item.product?.reference || null,
+        quantity: item.quantity,
+        price: item.price,
+      })),
+      total: selectedOrder.total,
+      companyName: settings?.site_name || 'SenPièces',
+      companyAddress: settings?.address || 'Dakar, Sénégal',
+      companyPhone: settings?.contact_phone || '',
+      companyEmail: settings?.contact_email || '',
+      logoUrl: settings?.logo_url || null,
+      footerText: 'Merci pour votre achat !',
+    };
   };
 
   const handleSaveProfile = async (e: React.FormEvent) => {
@@ -296,13 +358,25 @@ const Account = () => {
                               })}
                             </p>
                           </div>
-                          <div className="text-right">
-                            <p className="font-semibold">
-                              {order.total.toLocaleString()} CFA
-                            </p>
-                            <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(order.status)}`}>
-                              {getStatusLabel(order.status)}
-                            </span>
+                          <div className="flex items-center gap-4">
+                            <div className="text-right">
+                              <p className="font-semibold">
+                                {order.total.toLocaleString()} CFA
+                              </p>
+                              <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(order.status)}`}>
+                                {getStatusLabel(order.status)}
+                              </span>
+                            </div>
+                            {(order.status === 'delivered' || order.status === 'shipped' || order.status === 'confirmed') && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleViewInvoice(order)}
+                              >
+                                <FileText className="h-4 w-4 mr-1" />
+                                Facture
+                              </Button>
+                            )}
                           </div>
                         </div>
                       ))}
@@ -312,6 +386,18 @@ const Account = () => {
               </Card>
             </TabsContent>
           </Tabs>
+
+          {/* Invoice Dialog */}
+          <Dialog open={invoiceOpen} onOpenChange={setInvoiceOpen}>
+            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Facture</DialogTitle>
+              </DialogHeader>
+              {selectedOrder && getInvoiceData() && (
+                <InvoiceGenerator data={getInvoiceData()!} />
+              )}
+            </DialogContent>
+          </Dialog>
         </div>
       </Layout>
     </>

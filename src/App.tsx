@@ -35,6 +35,7 @@ const Users = lazy(() => import("./pages/admin/Users"));
 const Settings = lazy(() => import("./pages/admin/Settings"));
 const AdminProfile = lazy(() => import("./pages/admin/AdminProfile"));
 const ImportCatalogue = lazy(() => import("./pages/admin/ImportCatalogue"));
+const AdminNotifications = lazy(() => import("./pages/admin/Notifications"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
@@ -95,6 +96,7 @@ const App = () => (
                         <Route path="vehicules" element={<Vehicles />} />
                         <Route path="bannieres" element={<Banners />} />
                         <Route path="commandes" element={<Orders />} />
+                        <Route path="notifications" element={<AdminNotifications />} />
                         <Route path="utilisateurs" element={<Users />} />
                         <Route path="profil" element={<AdminProfile />} />
                         <Route path="import" element={<ImportCatalogue />} />

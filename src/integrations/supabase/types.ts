@@ -225,6 +225,38 @@ export type Database = {
           },
         ]
       }
+      invoices: {
+        Row: {
+          created_at: string
+          id: string
+          invoice_data: Json
+          invoice_number: string
+          order_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          invoice_data: Json
+          invoice_number: string
+          order_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          invoice_data?: Json
+          invoice_number?: string
+          order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mechanical_specs: {
         Row: {
           assembly_side: string | null
@@ -262,6 +294,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean | null
+          link: string | null
+          message: string
+          title: string
+          type: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          link?: string | null
+          message: string
+          title: string
+          type?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          link?: string | null
+          message?: string
+          title?: string
+          type?: string
+          user_id?: string | null
+        }
+        Relationships: []
       }
       oil_specs: {
         Row: {
@@ -509,6 +574,12 @@ export type Database = {
           contact_phone: string | null
           currency: string | null
           id: string
+          invoice_address: string | null
+          invoice_company_name: string | null
+          invoice_email: string | null
+          invoice_footer_text: string | null
+          invoice_phone: string | null
+          invoice_siret: string | null
           logo_url: string | null
           maintenance_end_date: string | null
           maintenance_message: string | null
@@ -527,6 +598,12 @@ export type Database = {
           contact_phone?: string | null
           currency?: string | null
           id?: string
+          invoice_address?: string | null
+          invoice_company_name?: string | null
+          invoice_email?: string | null
+          invoice_footer_text?: string | null
+          invoice_phone?: string | null
+          invoice_siret?: string | null
           logo_url?: string | null
           maintenance_end_date?: string | null
           maintenance_message?: string | null
@@ -545,6 +622,12 @@ export type Database = {
           contact_phone?: string | null
           currency?: string | null
           id?: string
+          invoice_address?: string | null
+          invoice_company_name?: string | null
+          invoice_email?: string | null
+          invoice_footer_text?: string | null
+          invoice_phone?: string | null
+          invoice_siret?: string | null
           logo_url?: string | null
           maintenance_end_date?: string | null
           maintenance_message?: string | null

@@ -125,6 +125,9 @@ const Orders = () => {
   };
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
+    // Find the order to get user_id
+    const order = orders.find(o => o.id === orderId);
+    
     const { error } = await supabase
       .from('orders')
       .update({ status: newStatus })
@@ -134,6 +137,27 @@ const Orders = () => {
       toast.error('Erreur lors de la mise à jour');
     } else {
       toast.success('Statut mis à jour');
+      
+      // Send notification to user
+      if (order) {
+        const statusLabels: Record<string, string> = {
+          pending: 'en attente',
+          confirmed: 'confirmée',
+          processing: 'en préparation',
+          shipped: 'expédiée',
+          delivered: 'livrée',
+          cancelled: 'annulée',
+        };
+        
+        await supabase.from('notifications').insert({
+          user_id: order.user_id,
+          title: 'Mise à jour de votre commande',
+          message: `Votre commande #${orderId.slice(0, 8)} est maintenant ${statusLabels[newStatus] || newStatus}.`,
+          type: 'order',
+          link: '/mon-compte',
+        });
+      }
+      
       fetchOrders();
       if (selectedOrder?.id === orderId) {
         setSelectedOrder({ ...selectedOrder, status: newStatus });
