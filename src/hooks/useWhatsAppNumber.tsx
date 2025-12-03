@@ -19,17 +19,22 @@ export const useWhatsAppNumber = () => {
   const { settings } = useSiteSettings();
 
   const fetchNumbers = useCallback(async () => {
-    const { data, error } = await supabase
-      .from('whatsapp_numbers')
-      .select('*')
-      .eq('is_active', true)
-      .order('position', { ascending: true });
+    try {
+      const { data, error } = await supabase
+        .from('whatsapp_numbers' as any)
+        .select('*')
+        .eq('is_active', true)
+        .order('position', { ascending: true });
 
-    if (error) {
-      console.error('Error fetching WhatsApp numbers:', error);
+      if (error) {
+        console.error('Error fetching WhatsApp numbers:', error);
+        setNumbers([]);
+      } else {
+        setNumbers((data as unknown as WhatsAppNumber[]) || []);
+      }
+    } catch (err) {
+      console.error('Error fetching WhatsApp numbers:', err);
       setNumbers([]);
-    } else {
-      setNumbers(data || []);
     }
     setLoading(false);
   }, []);
@@ -75,16 +80,21 @@ export const useWhatsAppNumbersAdmin = () => {
   const [loading, setLoading] = useState(true);
 
   const fetchNumbers = useCallback(async () => {
-    const { data, error } = await supabase
-      .from('whatsapp_numbers')
-      .select('*')
-      .order('position', { ascending: true });
+    try {
+      const { data, error } = await supabase
+        .from('whatsapp_numbers' as any)
+        .select('*')
+        .order('position', { ascending: true });
 
-    if (error) {
-      console.error('Error fetching WhatsApp numbers:', error);
+      if (error) {
+        console.error('Error fetching WhatsApp numbers:', error);
+        setNumbers([]);
+      } else {
+        setNumbers((data as unknown as WhatsAppNumber[]) || []);
+      }
+    } catch (err) {
+      console.error('Error fetching WhatsApp numbers:', err);
       setNumbers([]);
-    } else {
-      setNumbers(data || []);
     }
     setLoading(false);
   }, []);
@@ -99,7 +109,7 @@ export const useWhatsAppNumbersAdmin = () => {
       : 0;
 
     const { error } = await supabase
-      .from('whatsapp_numbers')
+      .from('whatsapp_numbers' as any)
       .insert({
         phone_number: phoneNumber,
         name: name || null,
@@ -112,7 +122,7 @@ export const useWhatsAppNumbersAdmin = () => {
 
   const updateNumber = async (id: string, updates: Partial<WhatsAppNumber>) => {
     const { error } = await supabase
-      .from('whatsapp_numbers')
+      .from('whatsapp_numbers' as any)
       .update(updates)
       .eq('id', id);
 
@@ -122,7 +132,7 @@ export const useWhatsAppNumbersAdmin = () => {
 
   const deleteNumber = async (id: string) => {
     const { error } = await supabase
-      .from('whatsapp_numbers')
+      .from('whatsapp_numbers' as any)
       .delete()
       .eq('id', id);
 
@@ -133,7 +143,7 @@ export const useWhatsAppNumbersAdmin = () => {
   const reorderNumbers = async (orderedIds: string[]) => {
     const updates = orderedIds.map((id, index) => 
       supabase
-        .from('whatsapp_numbers')
+        .from('whatsapp_numbers' as any)
         .update({ position: index })
         .eq('id', id)
     );
