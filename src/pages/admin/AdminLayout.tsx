@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Package, FolderTree, Image, Settings, Users, ShoppingBag, LogOut, Car, UserCircle, Upload, Bell } from 'lucide-react';
+import { LayoutDashboard, Package, FolderTree, Image, Settings, Users, ShoppingBag, LogOut, Car, UserCircle, Upload, Bell, ImageIcon } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -17,6 +17,7 @@ const AdminLayout = () => {
     { icon: FolderTree, label: 'Catégories', path: '/admin/categories', roles: ['admin', 'moderator'] },
     { icon: Car, label: 'Véhicules', path: '/admin/vehicules', roles: ['admin', 'moderator'] },
     { icon: Image, label: 'Bannières', path: '/admin/bannieres', roles: ['admin', 'moderator'] },
+    { icon: ImageIcon, label: 'Bannières Catégories', path: '/admin/bannieres-categories', roles: ['admin', 'moderator'] },
     { icon: ShoppingBag, label: 'Commandes', path: '/admin/commandes', roles: ['admin', 'moderator'] },
     { icon: Bell, label: 'Notifications', path: '/admin/notifications', roles: ['admin', 'moderator'] },
     { icon: Users, label: 'Utilisateurs', path: '/admin/utilisateurs', roles: ['admin'] },
