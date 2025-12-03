@@ -5,6 +5,7 @@ import { ChevronRight, SlidersHorizontal, X } from 'lucide-react';
 import Layout from '@/components/layout/Layout';
 import ProductCard from '@/components/product/ProductCard';
 import FilterSidebar from '@/components/filters/FilterSidebar';
+import BreadcrumbSchema from '@/components/seo/BreadcrumbSchema';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -20,6 +21,7 @@ import {
 } from '@/components/ui/sheet';
 import { supabase } from '@/integrations/supabase/client';
 import { useProductFilters } from '@/hooks/useProductFilters';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 
 interface Category {
   id: string;
@@ -33,6 +35,7 @@ const CategoryProducts = () => {
   const [categoryLoading, setCategoryLoading] = useState(true);
   const [sortBy, setSortBy] = useState('name');
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const { settings } = useSiteSettings();
 
   // Fetch category
   useEffect(() => {
@@ -113,12 +116,19 @@ const CategoryProducts = () => {
     );
   }
 
+  const breadcrumbItems = [
+    { name: 'Accueil', url: 'https://senpieces.sn/' },
+    { name: 'Catégories', url: 'https://senpieces.sn/categories' },
+    { name: category.name, url: `https://senpieces.sn/categorie/${category.slug}` }
+  ];
+
   return (
     <>
       <Helmet>
-        <title>{category.name} | AutoPièces Pro</title>
+        <title>{category.name} | {settings?.site_name || 'Senpieces'}</title>
         <meta name="description" content={`Découvrez notre sélection de pièces ${category.name.toLowerCase()} pour votre véhicule. Prix compétitifs et livraison rapide.`} />
       </Helmet>
+      <BreadcrumbSchema items={breadcrumbItems} />
       
       <Layout>
         <div className="container py-8">
