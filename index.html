@@ -8,6 +8,12 @@
     <meta name="description" content="Senpices.sn | Pièces Détachées Auto Neuves & Occasion au Sénégal" />
     <meta name="author" content="SenPièces" />
 
+    <!-- Preconnect for performance -->
+    <link rel="preconnect" href="https://rwkmatdghpqfawtmuujb.supabase.co" crossorigin />
+    <link rel="dns-prefetch" href="https://rwkmatdghpqfawtmuujb.supabase.co" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#f97316" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -30,10 +36,32 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@senpieces" />
     <meta name="twitter:image" content="/og-image.png" />
+
+    <!-- Critical CSS inline for LCP -->
+    <style>
+      #root { min-height: 100vh; }
+      .loading-spinner {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background: #09090b;
+      }
+      .loading-spinner::after {
+        content: '';
+        width: 40px;
+        height: 40px;
+        border: 3px solid #27272a;
+        border-top-color: #f97316;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
   </head>
 
   <body>
-    <div id="root"></div>
+    <div id="root"><div class="loading-spinner"></div></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

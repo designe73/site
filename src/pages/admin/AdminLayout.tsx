@@ -2,11 +2,15 @@ import { useEffect } from 'react';
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Package, FolderTree, Image, Settings, Users, ShoppingBag, LogOut, Car, UserCircle, Upload, Bell, ImageIcon } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useAdminPushNotifications } from '@/hooks/useAdminPushNotifications';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 const AdminLayout = () => {
   const { user, isAdmin, isModerator, loading, signOut } = useAuth();
+  
+  // Enable admin push notifications
+  useAdminPushNotifications();
   const navigate = useNavigate();
   const location = useLocation();
 
