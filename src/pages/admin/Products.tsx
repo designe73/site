@@ -534,31 +534,36 @@ const Products = () => {
     }
 
     setBulkImageSearching(true);
-    setBulkImageProgress({ current: 0, total: productsWithoutImages.length });
+    const totalProducts = productsWithoutImages.length;
+    setBulkImageProgress({ current: 0, total: totalProducts });
     
     let successCount = 0;
     let failCount = 0;
 
-    for (let i = 0; i < productsWithoutImages.length; i++) {
-      const product = productsWithoutImages[i];
-      setBulkImageProgress({ current: i + 1, total: productsWithoutImages.length });
+    // Process in batches of 10 using the batch endpoint
+    const batchSize = 10;
+    for (let i = 0; i < totalProducts; i += batchSize) {
+      const batch = productsWithoutImages.slice(i, i + batchSize).map(p => ({
+        id: p.id,
+        reference: p.reference!
+      }));
+      
+      setBulkImageProgress({ current: Math.min(i + batchSize, totalProducts), total: totalProducts });
       
       try {
-        const { data, error } = await supabase.functions.invoke('scrape-oscaro-image', {
-          body: { reference: product.reference, productId: product.id }
+        const { data, error } = await supabase.functions.invoke('scrape-oscaro-batch', {
+          body: { products: batch }
         });
         
-        if (!error && data?.images?.length > 0) {
-          successCount++;
+        if (!error && data?.summary) {
+          successCount += data.summary.successCount;
+          failCount += data.summary.failCount;
         } else {
-          failCount++;
+          failCount += batch.length;
         }
       } catch {
-        failCount++;
+        failCount += batch.length;
       }
-      
-      // Small delay to avoid overwhelming the API
-      await new Promise(resolve => setTimeout(resolve, 1000));
     }
 
     setBulkImageSearching(false);
@@ -566,6 +571,62 @@ const Products = () => {
     fetchProducts();
     
     toast.success(`Recherche terminée: ${successCount} images trouvées, ${failCount} échecs`);
+  };
+
+  // Bulk image URL update for selected products
+  const handleBulkImageUrlUpdate = async (imageUrl: string) => {
+    if (selectedProductIds.length === 0) return;
+    
+    const { error } = await supabase
+      .from('products')
+      .update({ image_url: imageUrl || null })
+      .in('id', selectedProductIds);
+
+    if (error) {
+      toast.error('Erreur lors de la modification');
+    } else {
+      toast.success(`${selectedProductIds.length} produits modifiés`);
+      setSelectedProductIds([]);
+      fetchProducts();
+    }
+  };
+
+  // Bulk Oscaro search for selected products
+  const handleSelectedProductsImageSearch = async () => {
+    const selectedWithRef = products.filter(p => 
+      selectedProductIds.includes(p.id) && p.reference
+    );
+    
+    if (selectedWithRef.length === 0) {
+      toast.error('Aucun produit sélectionné avec référence');
+      return;
+    }
+
+    setBulkImageSearching(true);
+    setBulkImageProgress({ current: 0, total: selectedWithRef.length });
+    
+    const batch = selectedWithRef.map(p => ({ id: p.id, reference: p.reference! }));
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('scrape-oscaro-batch', {
+        body: { products: batch }
+      });
+      
+      setBulkImageProgress({ current: selectedWithRef.length, total: selectedWithRef.length });
+      
+      if (!error && data?.summary) {
+        toast.success(`${data.summary.successCount} images trouvées, ${data.summary.failCount} échecs`);
+      } else {
+        toast.error('Erreur lors de la recherche');
+      }
+    } catch {
+      toast.error('Erreur lors de la recherche');
+    }
+
+    setBulkImageSearching(false);
+    setBulkImageProgress({ current: 0, total: 0 });
+    setSelectedProductIds([]);
+    fetchProducts();
   };
 
   const toggleVehicle = (vehicleId: string) => {
@@ -1088,6 +1149,25 @@ const Products = () => {
                     </div>
                   </DialogContent>
                 </Dialog>
+                
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleSelectedProductsImageSearch}
+                  disabled={bulkImageSearching}
+                >
+                  {bulkImageSearching ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      {bulkImageProgress.current}/{bulkImageProgress.total}
+                    </>
+                  ) : (
+                    <>
+                      <ImageIcon className="h-4 w-4 mr-2" />
+                      Chercher images
+                    </>
+                  )}
+                </Button>
                 
                 <Button variant="destructive" size="sm" onClick={handleBulkDelete}>
                   <Trash2 className="h-4 w-4 mr-2" />
