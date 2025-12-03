@@ -10,6 +10,7 @@ import { SiteSettingsProvider } from "@/hooks/useSiteSettings";
 import MaintenanceMode from "@/components/MaintenanceMode";
 import PushNotificationPrompt from "@/components/notifications/PushNotificationPrompt";
 import PWAInstallPrompt from "@/components/pwa/PWAInstallPrompt";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import { lazy, Suspense } from "react";
 
 // Eager load critical pages
@@ -60,15 +61,16 @@ const PageLoader = () => (
 );
 
 const App = () => (
-  <HelmetProvider>
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <CartProvider>
-          <SiteSettingsProvider>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <BrowserRouter
+  <ErrorBoundary>
+    <HelmetProvider>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <CartProvider>
+            <SiteSettingsProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <BrowserRouter
                 future={{
                   v7_startTransition: true,
                   v7_relativeSplatPath: true,
@@ -122,6 +124,7 @@ const App = () => (
       </AuthProvider>
     </QueryClientProvider>
   </HelmetProvider>
+  </ErrorBoundary>
 );
 
 export default App;
