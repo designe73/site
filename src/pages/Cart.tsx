@@ -89,7 +89,7 @@ const Cart = () => {
   return (
     <>
       <Helmet>
-        <title>Panier ({items.length}) | AutoPièces Pro</title>
+        <title>{`Panier (${items.length}) | AutoPièces Pro`}</title>
       </Helmet>
       
       <Layout>
