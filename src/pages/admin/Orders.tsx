@@ -39,6 +39,9 @@ interface OrderItem {
   product: {
     name: string;
     image_url: string | null;
+    reference: string | null;
+    brand: string | null;
+    slug: string;
   } | null;
 }
 
@@ -105,7 +108,7 @@ const Orders = () => {
       .from('order_items')
       .select(`
         *,
-        product:products(name, image_url)
+        product:products(name, image_url, reference, brand, slug)
       `)
       .eq('order_id', orderId);
     setOrderItems(data || []);
@@ -335,27 +338,58 @@ const Orders = () => {
 
                 {/* Order items */}
                 <div>
-                  <h4 className="font-semibold mb-3">Articles commandés</h4>
-                  <div className="space-y-3">
+                  <h4 className="font-semibold mb-3">Articles commandés ({orderItems.length})</h4>
+                  <div className="space-y-4">
                     {orderItems.map((item) => (
-                      <div key={item.id} className="flex items-center gap-3 p-3 bg-muted rounded-lg">
-                        <div className="w-12 h-12 bg-background rounded overflow-hidden">
-                          {item.product?.image_url && (
-                            <img 
-                              src={item.product.image_url} 
-                              alt="" 
-                              className="w-full h-full object-cover"
-                            />
-                          )}
+                      <Card key={item.id} className="p-4">
+                        <div className="flex gap-4">
+                          <div className="w-20 h-20 bg-muted rounded-lg overflow-hidden flex-shrink-0">
+                            {item.product?.image_url ? (
+                              <img 
+                                src={item.product.image_url} 
+                                alt={item.product?.name || ''} 
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <Package className="h-8 w-8 text-muted-foreground" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h5 className="font-semibold text-base truncate">
+                              {item.product?.name || 'Produit supprimé'}
+                            </h5>
+                            <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-2 text-sm">
+                              {item.product?.reference && (
+                                <p>
+                                  <span className="text-muted-foreground">Réf:</span>{' '}
+                                  <span className="font-mono">{item.product.reference}</span>
+                                </p>
+                              )}
+                              {item.product?.brand && (
+                                <p>
+                                  <span className="text-muted-foreground">Marque:</span>{' '}
+                                  <span className="font-medium">{item.product.brand}</span>
+                                </p>
+                              )}
+                              <p>
+                                <span className="text-muted-foreground">Quantité:</span>{' '}
+                                <span className="font-medium">{item.quantity}</span>
+                              </p>
+                              <p>
+                                <span className="text-muted-foreground">Prix unitaire:</span>{' '}
+                                <span className="font-medium">{formatPrice(item.price)}</span>
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right flex-shrink-0">
+                            <p className="text-lg font-bold text-primary">
+                              {formatPrice(item.quantity * item.price)}
+                            </p>
+                          </div>
                         </div>
-                        <div className="flex-1">
-                          <p className="font-medium">{item.product?.name || 'Produit supprimé'}</p>
-                          <p className="text-sm text-muted-foreground">
-                            Qté: {item.quantity} × {formatPrice(item.price)}
-                          </p>
-                        </div>
-                        <p className="font-bold">{formatPrice(item.quantity * item.price)}</p>
-                      </div>
+                      </Card>
                     ))}
                   </div>
                 </div>
