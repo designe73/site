@@ -164,6 +164,15 @@ const Cart = () => {
         })
         .eq('id', user.id);
 
+      // Notify user
+      await supabase.from('notifications').insert({
+        user_id: user.id,
+        title: 'Commande confirmée',
+        message: `Votre commande #${order.id.slice(0, 8)} a été reçue. Nous vous contacterons bientôt.`,
+        type: 'order',
+        link: '/mon-compte',
+      });
+
       // Clear cart
       await clearCart();
 

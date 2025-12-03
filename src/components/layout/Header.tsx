@@ -8,6 +8,7 @@ import { useCart } from '@/hooks/useCart';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 import GlobalSearch from '@/components/search/GlobalSearch';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
+import NotificationBell from '@/components/notifications/NotificationBell';
 
 const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -49,6 +50,9 @@ const Header = () => {
 
             {/* Actions */}
             <div className="flex items-center gap-2">
+              {/* Notifications */}
+              <NotificationBell />
+
               {/* Mon compte link when logged in */}
               {user && settings?.account_enabled && (
                 <Button variant="ghost" size="sm" asChild className="hidden sm:flex items-center gap-2">
