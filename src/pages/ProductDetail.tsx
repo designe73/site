@@ -12,6 +12,7 @@ import { formatPrice } from '@/lib/formatPrice';
 import ProductSpecs from '@/components/product/ProductSpecs';
 import CompatibleVehicles from '@/components/product/CompatibleVehicles';
 import ProductSchema from '@/components/seo/ProductSchema';
+import BreadcrumbSchema from '@/components/seo/BreadcrumbSchema';
 
 interface Product {
   id: string;
@@ -120,6 +121,15 @@ const ProductDetail = () => {
 
   const allImages = [product.image_url, ...(product.images || [])].filter(Boolean) as string[];
 
+  const breadcrumbItems = [
+    { name: 'Accueil', url: 'https://senpieces.sn/' },
+    ...(product.category ? [{ 
+      name: product.category.name, 
+      url: `https://senpieces.sn/categorie/${product.category.slug}` 
+    }] : []),
+    { name: product.name, url: `https://senpieces.sn/product/${product.slug}` }
+  ];
+
   return (
     <>
       <Helmet>
@@ -127,6 +137,7 @@ const ProductDetail = () => {
         <meta name="description" content={product.description || `Achetez ${product.name} au meilleur prix. Livraison rapide.`} />
       </Helmet>
       <ProductSchema product={product} />
+      <BreadcrumbSchema items={breadcrumbItems} />
       
       <Layout>
         <div className="container py-8">
