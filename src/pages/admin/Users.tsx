@@ -6,14 +6,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Shield, ShieldOff, Loader2 } from 'lucide-react';
+import { Shield, ShieldOff, Loader2, UserCog } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+type AppRole = 'admin' | 'moderator' | 'user';
 
 interface UserWithRole {
   id: string;
   full_name: string | null;
   phone: string | null;
   created_at: string;
-  is_admin: boolean;
+  role: AppRole;
 }
 
 export default function Users() {
@@ -35,48 +38,56 @@ export default function Users() {
       // Fetch all user roles
       const { data: roles, error: rolesError } = await supabase
         .from('user_roles')
-        .select('user_id, role')
-        .eq('role', 'admin');
+        .select('user_id, role');
 
       if (rolesError) throw rolesError;
 
-      // Combine data
-      const adminUserIds = new Set(roles?.map(r => r.user_id) || []);
+      // Create a map of user roles
+      const userRolesMap = new Map<string, AppRole>();
+      roles?.forEach(r => {
+        // Priority: admin > moderator > user
+        const currentRole = userRolesMap.get(r.user_id);
+        if (!currentRole || (r.role === 'admin') || (r.role === 'moderator' && currentRole === 'user')) {
+          userRolesMap.set(r.user_id, r.role as AppRole);
+        }
+      });
       
       return profiles?.map(profile => ({
         ...profile,
-        is_admin: adminUserIds.has(profile.id)
+        role: userRolesMap.get(profile.id) || 'user'
       })) as UserWithRole[];
     }
   });
 
-  const toggleAdminMutation = useMutation({
-    mutationFn: async ({ userId, isAdmin }: { userId: string; isAdmin: boolean }) => {
-      if (isAdmin) {
-        // Remove admin role
-        const { error } = await supabase
+  const changeRoleMutation = useMutation({
+    mutationFn: async ({ userId, newRole }: { userId: string; newRole: AppRole }) => {
+      // First, delete existing roles for this user
+      const { error: deleteError } = await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', userId);
+      
+      if (deleteError) throw deleteError;
+
+      // If new role is not 'user', add the role
+      if (newRole !== 'user') {
+        const { error: insertError } = await supabase
           .from('user_roles')
-          .delete()
-          .eq('user_id', userId)
-          .eq('role', 'admin');
+          .insert({ user_id: userId, role: newRole });
         
-        if (error) throw error;
-      } else {
-        // Add admin role
-        const { error } = await supabase
-          .from('user_roles')
-          .insert({ user_id: userId, role: 'admin' });
-        
-        if (error) throw error;
+        if (insertError) throw insertError;
       }
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      const roleLabels: Record<AppRole, string> = {
+        admin: 'Administrateur',
+        moderator: 'Modérateur',
+        user: 'Utilisateur'
+      };
       toast({
         title: 'Succès',
-        description: variables.isAdmin 
-          ? 'Rôle admin retiré avec succès'
-          : 'Rôle admin attribué avec succès'
+        description: `Rôle changé en ${roleLabels[variables.newRole]}`
       });
       setLoadingUserId(null);
     },
@@ -90,9 +101,30 @@ export default function Users() {
     }
   });
 
-  const handleToggleAdmin = (userId: string, isAdmin: boolean) => {
+  const handleRoleChange = (userId: string, newRole: AppRole) => {
     setLoadingUserId(userId);
-    toggleAdminMutation.mutate({ userId, isAdmin });
+    changeRoleMutation.mutate({ userId, newRole });
+  };
+
+  const getRoleBadge = (role: AppRole) => {
+    switch (role) {
+      case 'admin':
+        return (
+          <Badge variant="default" className="gap-1 bg-primary">
+            <Shield className="w-3 h-3" />
+            Administrateur
+          </Badge>
+        );
+      case 'moderator':
+        return (
+          <Badge variant="default" className="gap-1 bg-blue-600">
+            <UserCog className="w-3 h-3" />
+            Modérateur
+          </Badge>
+        );
+      default:
+        return <Badge variant="secondary">Utilisateur</Badge>;
+    }
   };
 
   if (isLoading) {
@@ -108,7 +140,7 @@ export default function Users() {
       <div>
         <h1 className="text-3xl font-bold text-foreground">Gestion des Utilisateurs</h1>
         <p className="text-muted-foreground mt-2">
-          Attribuer ou retirer les rôles administrateur aux utilisateurs
+          Attribuer des rôles aux utilisateurs (Admin, Modérateur, Utilisateur)
         </p>
       </div>
 
@@ -126,8 +158,8 @@ export default function Users() {
                 <TableHead>Nom</TableHead>
                 <TableHead>Téléphone</TableHead>
                 <TableHead>Date d'inscription</TableHead>
-                <TableHead>Rôle</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>Rôle actuel</TableHead>
+                <TableHead className="text-right">Changer le rôle</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -141,36 +173,26 @@ export default function Users() {
                     {new Date(user.created_at).toLocaleDateString('fr-FR')}
                   </TableCell>
                   <TableCell>
-                    {user.is_admin ? (
-                      <Badge variant="default" className="gap-1">
-                        <Shield className="w-3 h-3" />
-                        Administrateur
-                      </Badge>
-                    ) : (
-                      <Badge variant="secondary">Utilisateur</Badge>
-                    )}
+                    {getRoleBadge(user.role)}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      variant={user.is_admin ? 'destructive' : 'default'}
-                      size="sm"
-                      onClick={() => handleToggleAdmin(user.id, user.is_admin)}
-                      disabled={loadingUserId === user.id}
-                    >
-                      {loadingUserId === user.id ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : user.is_admin ? (
-                        <>
-                          <ShieldOff className="w-4 h-4 mr-2" />
-                          Retirer admin
-                        </>
-                      ) : (
-                        <>
-                          <Shield className="w-4 h-4 mr-2" />
-                          Rendre admin
-                        </>
-                      )}
-                    </Button>
+                    {loadingUserId === user.id ? (
+                      <Loader2 className="w-4 h-4 animate-spin ml-auto" />
+                    ) : (
+                      <Select
+                        value={user.role}
+                        onValueChange={(value: AppRole) => handleRoleChange(user.id, value)}
+                      >
+                        <SelectTrigger className="w-40 ml-auto">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="user">Utilisateur</SelectItem>
+                          <SelectItem value="moderator">Modérateur</SelectItem>
+                          <SelectItem value="admin">Administrateur</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}

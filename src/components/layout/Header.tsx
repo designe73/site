@@ -1,22 +1,19 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingCart, Menu, X, Phone, Settings } from 'lucide-react';
+import { ShoppingCart, Menu, X, Phone, Settings, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { useCart } from '@/hooks/useCart';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 import GlobalSearch from '@/components/search/GlobalSearch';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
+
 const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const {
-    user,
-    signOut,
-    isAdmin
-  } = useAuth();
-  const {
-    totalItems
-  } = useCart();
+  const { user, signOut, isAdmin } = useAuth();
+  const { totalItems } = useCart();
+  const { settings } = useSiteSettings();
   return <header className="sticky top-0 z-50 w-full">
       {/* Top bar */}
       <div className="bg-secondary text-secondary-foreground py-2 px-4">
@@ -59,7 +56,16 @@ const Header = () => {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
                   {user ? <>
+                      {settings?.account_enabled && (
+                        <DropdownMenuItem asChild>
+                          <Link to="/mon-compte" className="flex items-center gap-2">
+                            <User className="h-4 w-4" />
+                            Mon compte
+                          </Link>
+                        </DropdownMenuItem>
+                      )}
                       {isAdmin && <>
+                          <DropdownMenuSeparator />
                           <DropdownMenuLabel className="text-primary font-bold flex items-center gap-2">
                             <Settings className="h-4 w-4" />
                             Administrateur
@@ -100,8 +106,8 @@ const Header = () => {
                               Gestion des utilisateurs
                             </Link>
                           </DropdownMenuItem>
-                          <DropdownMenuSeparator />
                         </>}
+                      <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={signOut}>
                         Déconnexion
                       </DropdownMenuItem>

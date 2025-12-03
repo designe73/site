@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Save, Loader2, AlertTriangle, Search } from 'lucide-react';
+import { Save, Loader2, AlertTriangle, Search, MessageCircle, UserCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,6 +22,8 @@ interface SiteSettings {
   seo_title: string;
   seo_description: string;
   seo_keywords: string;
+  whatsapp_enabled: boolean;
+  account_enabled: boolean;
 }
 
 const Settings = () => {
@@ -39,6 +41,8 @@ const Settings = () => {
     seo_title: '',
     seo_description: '',
     seo_keywords: '',
+    whatsapp_enabled: true,
+    account_enabled: true,
   });
 
   useEffect(() => {
@@ -66,6 +70,8 @@ const Settings = () => {
         seo_title: data.seo_title || '',
         seo_description: data.seo_description || '',
         seo_keywords: data.seo_keywords || '',
+        whatsapp_enabled: data.whatsapp_enabled ?? true,
+        account_enabled: data.account_enabled ?? true,
       });
     }
     setLoading(false);
@@ -169,6 +175,51 @@ const Settings = () => {
                     onChange={(e) => setSettings({ ...settings, maintenance_message: e.target.value })}
                     placeholder="Site en maintenance. Nous serons bientôt de retour."
                     rows={3}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Features Toggle */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Fonctionnalités</CardTitle>
+                <CardDescription>
+                  Activez ou désactivez les fonctionnalités du site
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <MessageCircle className="h-5 w-5 text-green-600" />
+                    <div className="space-y-0.5">
+                      <Label htmlFor="whatsapp_enabled">Commander par WhatsApp</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Permet aux clients de commander via WhatsApp
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    id="whatsapp_enabled"
+                    checked={settings.whatsapp_enabled}
+                    onCheckedChange={(checked) => setSettings({ ...settings, whatsapp_enabled: checked })}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <UserCircle className="h-5 w-5 text-blue-600" />
+                    <div className="space-y-0.5">
+                      <Label htmlFor="account_enabled">Espace Mon compte</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Permet aux clients d'accéder à leur espace personnel
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    id="account_enabled"
+                    checked={settings.account_enabled}
+                    onCheckedChange={(checked) => setSettings({ ...settings, account_enabled: checked })}
                   />
                 </div>
               </CardContent>

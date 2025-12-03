@@ -3,6 +3,7 @@ import { ShoppingCart, Check, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatPrice } from '@/lib/formatPrice';
 import { useCart } from '@/hooks/useCart';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 
 interface ProductCardProps {
   id: string;
@@ -30,6 +31,7 @@ const ProductCard = ({
   isPromo,
 }: ProductCardProps) => {
   const { addToCart } = useCart();
+  const { settings } = useSiteSettings();
   const discount = originalPrice ? Math.round((1 - price / originalPrice) * 100) : 0;
 
   const handleAddToCart = (e: React.MouseEvent) => {
@@ -41,8 +43,9 @@ const ProductCard = ({
   const handleWhatsApp = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    const phone = settings?.contact_phone?.replace(/\s/g, '').replace('+', '') || '221771234567';
     const message = `Bonjour, je suis intéressé par ce produit:\n\n${name}\n${brand ? `Marque: ${brand}\n` : ''}${reference ? `Référence: ${reference}\n` : ''}Prix: ${formatPrice(price)}`;
-    const whatsappUrl = `https://wa.me/221771234567?text=${encodeURIComponent(message)}`;
+    const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
 
@@ -120,15 +123,17 @@ const ProductCard = ({
             <ShoppingCart className="h-4 w-4 mr-2" />
             Ajouter au panier
           </Button>
-          <Button 
-            onClick={handleWhatsApp}
-            variant="outline"
-            className="w-full border-green-500 text-green-600 hover:bg-green-50"
-            size="sm"
-          >
-            <MessageCircle className="h-4 w-4 mr-2" />
-            Commander sur WhatsApp
-          </Button>
+          {settings?.whatsapp_enabled && (
+            <Button 
+              onClick={handleWhatsApp}
+              variant="outline"
+              className="w-full border-green-500 text-green-600 hover:bg-green-50"
+              size="sm"
+            >
+              <MessageCircle className="h-4 w-4 mr-2" />
+              Commander sur WhatsApp
+            </Button>
+          )}
         </div>
       </div>
     </Link>
