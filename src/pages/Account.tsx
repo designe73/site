@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
-import { User, Package, MapPin, Phone, Save, Loader2, LogOut, FileText, Download, Eye } from 'lucide-react';
+import { User, Package, MapPin, Phone, Save, Loader2, LogOut, FileText, ChevronDown, ChevronUp } from 'lucide-react';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,11 +9,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 import InvoiceGenerator from '@/components/invoice/InvoiceGenerator';
+import OrderTimeline from '@/components/order/OrderTimeline';
 
 interface Profile {
   full_name: string;
@@ -58,6 +60,7 @@ const Account = () => {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [invoiceOpen, setInvoiceOpen] = useState(false);
+  const [expandedOrders, setExpandedOrders] = useState<string[]>([]);
 
   useEffect(() => {
     if (!settings?.account_enabled) {
@@ -111,6 +114,39 @@ const Account = () => {
       setOrders(data || []);
     }
   };
+
+  // Realtime subscription for order updates
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('account-order-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'orders',
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          const updatedOrder = payload.new as Order;
+          setOrders(prev => prev.map(order => 
+            order.id === updatedOrder.id ? updatedOrder : order
+          ));
+          // Auto-expand updated order to show timeline
+          if (!expandedOrders.includes(updatedOrder.id)) {
+            setExpandedOrders(prev => [...prev, updatedOrder.id]);
+          }
+          toast.info(`Commande #${updatedOrder.id.slice(0, 8)} mise à jour`);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, expandedOrders]);
 
   const fetchOrderItems = async (orderId: string) => {
     const { data } = await supabase
@@ -341,45 +377,75 @@ const Account = () => {
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      {orders.map((order) => (
-                        <div
-                          key={order.id}
-                          className="flex items-center justify-between p-4 border rounded-lg"
-                        >
-                          <div>
-                            <p className="font-medium">
-                              Commande #{order.id.slice(0, 8)}
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                              {new Date(order.created_at).toLocaleDateString('fr-FR', {
-                                day: 'numeric',
-                                month: 'long',
-                                year: 'numeric',
-                              })}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-4">
-                            <div className="text-right">
-                              <p className="font-semibold">
-                                {order.total.toLocaleString()} CFA
-                              </p>
-                              <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(order.status)}`}>
-                                {getStatusLabel(order.status)}
-                              </span>
+                      {orders.map((order) => {
+                        const isExpanded = expandedOrders.includes(order.id);
+                        return (
+                          <Collapsible
+                            key={order.id}
+                            open={isExpanded}
+                            onOpenChange={(open) => {
+                              setExpandedOrders(open 
+                                ? [...expandedOrders, order.id]
+                                : expandedOrders.filter(id => id !== order.id)
+                              );
+                            }}
+                          >
+                            <div className="border rounded-lg overflow-hidden">
+                              <CollapsibleTrigger asChild>
+                                <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 transition-colors">
+                                  <div className="flex items-center gap-3">
+                                    {isExpanded ? (
+                                      <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                                    ) : (
+                                      <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                                    )}
+                                    <div>
+                                      <p className="font-medium">
+                                        Commande #{order.id.slice(0, 8)}
+                                      </p>
+                                      <p className="text-sm text-muted-foreground">
+                                        {new Date(order.created_at).toLocaleDateString('fr-FR', {
+                                          day: 'numeric',
+                                          month: 'long',
+                                          year: 'numeric',
+                                        })}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-4">
+                                    <div className="text-right">
+                                      <p className="font-semibold">
+                                        {order.total.toLocaleString()} CFA
+                                      </p>
+                                      <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(order.status)}`}>
+                                        {getStatusLabel(order.status)}
+                                      </span>
+                                    </div>
+                                    {(order.status === 'delivered' || order.status === 'shipped' || order.status === 'confirmed') && (
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleViewInvoice(order);
+                                        }}
+                                      >
+                                        <FileText className="h-4 w-4 mr-1" />
+                                        Facture
+                                      </Button>
+                                    )}
+                                  </div>
+                                </div>
+                              </CollapsibleTrigger>
+                              <CollapsibleContent>
+                                <div className="px-4 pb-4 border-t bg-muted/30">
+                                  <OrderTimeline status={order.status} createdAt={order.created_at} />
+                                </div>
+                              </CollapsibleContent>
                             </div>
-                            {(order.status === 'delivered' || order.status === 'shipped' || order.status === 'confirmed') && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleViewInvoice(order)}
-                              >
-                                <FileText className="h-4 w-4 mr-1" />
-                                Facture
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      ))}
+                          </Collapsible>
+                        );
+                      })}
                     </div>
                   )}
                 </CardContent>

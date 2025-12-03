@@ -36,17 +36,17 @@ const Index = () => {
           {/* Categories */}
           <CategoryGrid />
           
+          {/* Featured Products - after categories */}
+          <FeaturedProducts title="Produits populaires" type="featured" />
+          
+          {/* Promo Products */}
+          <FeaturedProducts title="🔥 Promotions" type="promo" />
+          
           {/* Features Banner */}
           <PromoBanner />
           
           {/* Products by Category */}
           <CategoryProducts />
-          
-          {/* Featured Products */}
-          <FeaturedProducts title="Produits populaires" type="featured" />
-          
-          {/* Promo Products */}
-          <FeaturedProducts title="🔥 Promotions" type="promo" />
         </div>
       </Layout>
     </>
