@@ -11,6 +11,7 @@ import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { formatPrice } from '@/lib/formatPrice';
 import ProductSpecs from '@/components/product/ProductSpecs';
 import CompatibleVehicles from '@/components/product/CompatibleVehicles';
+import ProductSchema from '@/components/seo/ProductSchema';
 
 interface Product {
   id: string;
@@ -122,9 +123,10 @@ const ProductDetail = () => {
   return (
     <>
       <Helmet>
-        <title>{product.name} | AutoPièces Pro</title>
+        <title>{product.name} | {settings?.site_name || 'Senpieces'}</title>
         <meta name="description" content={product.description || `Achetez ${product.name} au meilleur prix. Livraison rapide.`} />
       </Helmet>
+      <ProductSchema product={product} />
       
       <Layout>
         <div className="container py-8">

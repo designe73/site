@@ -7,6 +7,7 @@ import FeaturedProducts from '@/components/home/FeaturedProducts';
 import PromoBanner from '@/components/home/PromoBanner';
 import CategoryProducts from '@/components/home/CategoryProducts';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
+import OrganizationSchema from '@/components/seo/OrganizationSchema';
 
 const Index = () => {
   const { settings } = useSiteSettings();
@@ -22,6 +23,7 @@ const Index = () => {
         <meta name="description" content={seoDescription} />
         <meta name="keywords" content={seoKeywords} />
       </Helmet>
+      <OrganizationSchema />
       
       <Layout>
         <div className="container py-6 space-y-6">
