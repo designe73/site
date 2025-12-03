@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import ProductCard from '@/components/product/ProductCard';
@@ -31,8 +31,16 @@ interface Category {
   icon: string | null;
 }
 
+interface CategoryBanner {
+  id: string;
+  image_url: string;
+  link: string | null;
+  title: string | null;
+}
+
 interface CategoryWithProducts extends Category {
   products: Product[];
+  banner?: CategoryBanner | null;
 }
 
 const CategoryProducts = () => {
@@ -41,10 +49,13 @@ const CategoryProducts = () => {
 
   useEffect(() => {
     const fetchCategoriesWithProducts = async () => {
-      const { data: categories } = await supabase
-        .from('categories')
-        .select('id, name, slug, icon')
-        .order('name');
+      const [categoriesRes, bannersRes] = await Promise.all([
+        supabase.from('categories').select('id, name, slug, icon').order('name'),
+        supabase.from('category_banners').select('id, category_id, image_url, link, title').eq('is_active', true),
+      ]);
+
+      const categories = categoriesRes.data;
+      const banners = bannersRes.data || [];
 
       if (!categories) {
         setLoading(false);
@@ -61,9 +72,11 @@ const CategoryProducts = () => {
           .limit(8);
 
         if (products && products.length > 0) {
+          const categoryBanner = banners.find(b => b.category_id === category.id);
           categoriesData.push({
             ...category,
-            products
+            products,
+            banner: categoryBanner || null,
           });
         }
       }
@@ -118,41 +131,69 @@ const CategoryProducts = () => {
             </Link>
           </div>
 
-          <Carousel
-            opts={{
-              align: 'start',
-              loop: true,
-            }}
-            plugins={[
-              Autoplay({
-                delay: 4000,
-                stopOnInteraction: true,
-                stopOnMouseEnter: true,
-              }),
-            ]}
-            className="w-full"
-          >
-            <CarouselContent className="-ml-2 md:-ml-4">
-              {category.products.map((product) => (
-                <CarouselItem key={product.id} className="pl-2 md:pl-4 basis-1/2 md:basis-1/3 lg:basis-1/4">
-                  <ProductCard
-                    id={product.id}
-                    name={product.name}
-                    slug={product.slug}
-                    price={product.price}
-                    originalPrice={product.original_price}
-                    imageUrl={product.image_url}
-                    brand={product.brand}
-                    reference={product.reference}
-                    stock={product.stock}
-                    isPromo={product.is_promo ?? false}
-                  />
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-            <CarouselPrevious className="hidden md:flex -left-4 bg-background border-border hover:bg-accent" />
-            <CarouselNext className="hidden md:flex -right-4 bg-background border-border hover:bg-accent" />
-          </Carousel>
+          <div className="flex gap-4">
+            {/* Products carousel */}
+            <div className={category.banner ? 'flex-1 min-w-0' : 'w-full'}>
+              <Carousel
+                opts={{
+                  align: 'start',
+                  loop: true,
+                }}
+                plugins={[
+                  Autoplay({
+                    delay: 4000,
+                    stopOnInteraction: true,
+                    stopOnMouseEnter: true,
+                  }),
+                ]}
+                className="w-full"
+              >
+                <CarouselContent className="-ml-2 md:-ml-4">
+                  {category.products.map((product) => (
+                    <CarouselItem key={product.id} className={`pl-2 md:pl-4 ${category.banner ? 'basis-1/2 md:basis-1/3 lg:basis-1/3' : 'basis-1/2 md:basis-1/3 lg:basis-1/4'}`}>
+                      <ProductCard
+                        id={product.id}
+                        name={product.name}
+                        slug={product.slug}
+                        price={product.price}
+                        originalPrice={product.original_price}
+                        imageUrl={product.image_url}
+                        brand={product.brand}
+                        reference={product.reference}
+                        stock={product.stock}
+                        isPromo={product.is_promo ?? false}
+                      />
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+                <CarouselPrevious className="hidden md:flex -left-4 bg-background border-border hover:bg-accent" />
+                <CarouselNext className="hidden md:flex -right-4 bg-background border-border hover:bg-accent" />
+              </Carousel>
+            </div>
+
+            {/* Side banner */}
+            {category.banner && (
+              <div className="hidden lg:block w-48 xl:w-56 shrink-0">
+                <Link 
+                  to={category.banner.link || `/categorie/${category.slug}`}
+                  className="block h-full"
+                >
+                  <div className="relative h-full rounded-lg overflow-hidden group">
+                    <img
+                      src={category.banner.image_url}
+                      alt={category.banner.title || category.name}
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                    {category.banner.title && (
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+                        <p className="text-white font-semibold text-sm">{category.banner.title}</p>
+                      </div>
+                    )}
+                  </div>
+                </Link>
+              </div>
+            )}
+          </div>
         </section>
       ))}
     </div>

@@ -199,6 +199,44 @@ export type Database = {
           },
         ]
       }
+      category_banners: {
+        Row: {
+          category_id: string | null
+          created_at: string
+          id: string
+          image_url: string
+          is_active: boolean | null
+          link: string | null
+          title: string | null
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string
+          id?: string
+          image_url: string
+          is_active?: boolean | null
+          link?: string | null
+          title?: string | null
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string
+          is_active?: boolean | null
+          link?: string | null
+          title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "category_banners_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       category_spec_types: {
         Row: {
           category_id: string

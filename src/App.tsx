@@ -38,6 +38,7 @@ const Settings = lazy(() => import("./pages/admin/Settings"));
 const AdminProfile = lazy(() => import("./pages/admin/AdminProfile"));
 const ImportCatalogue = lazy(() => import("./pages/admin/ImportCatalogue"));
 const AdminNotifications = lazy(() => import("./pages/admin/Notifications"));
+const CategoryBanners = lazy(() => import("./pages/admin/CategoryBanners"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Install = lazy(() => import("./pages/Install"));
 
@@ -101,6 +102,7 @@ const App = () => (
                         <Route path="categories" element={<AdminCategories />} />
                         <Route path="vehicules" element={<Vehicles />} />
                         <Route path="bannieres" element={<Banners />} />
+                        <Route path="bannieres-categories" element={<CategoryBanners />} />
                         <Route path="commandes" element={<Orders />} />
                         <Route path="notifications" element={<AdminNotifications />} />
                         <Route path="utilisateurs" element={<Users />} />

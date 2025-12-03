@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Plus, Pencil, Trash2, Search, X, Car, CheckSquare, Square, Filter, RotateCcw } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, X, Car, CheckSquare, Square, Filter, RotateCcw, ImageIcon, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -32,6 +32,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { supabase } from '@/integrations/supabase/client';
 import { formatPrice } from '@/lib/formatPrice';
 import { toast } from 'sonner';
@@ -144,6 +145,9 @@ const Products = () => {
   const [mechanicalForm, setMechanicalForm] = useState<MechanicalSpecForm>(emptyMechanicalForm);
   const [oilForm, setOilForm] = useState<OilSpecForm>(emptyOilForm);
   const [accessoryForm, setAccessoryForm] = useState<AccessorySpecForm>(emptyAccessoryForm);
+  
+  // Image search state
+  const [searchingImageFor, setSearchingImageFor] = useState<string | null>(null);
   
   const [form, setForm] = useState({
     name: '',
@@ -484,6 +488,34 @@ const Products = () => {
       is_featured: false,
       is_promo: false,
     });
+  };
+
+  const handleSearchImage = async (product: Product) => {
+    if (!product.reference) {
+      toast.error('Ce produit n\'a pas de référence');
+      return;
+    }
+    
+    setSearchingImageFor(product.id);
+    try {
+      const { data, error } = await supabase.functions.invoke('scrape-oscaro-image', {
+        body: { reference: product.reference, productId: product.id }
+      });
+      
+      if (error) throw error;
+      
+      if (data?.images?.length > 0) {
+        toast.success(`${data.images.length} image(s) trouvée(s) et mise(s) à jour`);
+        fetchProducts();
+      } else {
+        toast.info('Aucune image trouvée pour cette référence');
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error('Erreur lors de la recherche d\'images');
+    } finally {
+      setSearchingImageFor(null);
+    }
   };
 
   const toggleVehicle = (vehicleId: string) => {
@@ -1179,7 +1211,24 @@ const Products = () => {
                         </span>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                onClick={() => handleSearchImage(product)}
+                                disabled={searchingImageFor === product.id || !product.reference}
+                              >
+                                {searchingImageFor === product.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <ImageIcon className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Chercher image Oscaro</TooltipContent>
+                          </Tooltip>
                           <Button variant="ghost" size="icon" onClick={() => handleEdit(product)}>
                             <Pencil className="h-4 w-4" />
                           </Button>
