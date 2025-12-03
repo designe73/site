@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Wrench, AlertTriangle, Clock } from 'lucide-react';
+import { Wrench, AlertTriangle, Clock, LogIn, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
 
 interface MaintenanceModeProps {
   children: React.ReactNode;
@@ -18,6 +22,21 @@ const MaintenanceMode = ({ children }: MaintenanceModeProps) => {
   const [settings, setSettings] = useState<SiteSettings | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [countdown, setCountdown] = useState<{ days: number; hours: number; minutes: number; seconds: number } | null>(null);
+  const [showLogin, setShowLogin] = useState(false);
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  const checkAdminRole = async (userId: string) => {
+    const { data: roleData } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .in('role', ['admin', 'moderator'])
+      .maybeSingle();
+    
+    return !!roleData;
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -30,20 +49,26 @@ const MaintenanceMode = ({ children }: MaintenanceModeProps) => {
 
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const { data: roleData } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', user.id)
-          .in('role', ['admin', 'moderator'])
-          .maybeSingle();
-        
-        setIsAdmin(!!roleData);
+        const hasAdminRole = await checkAdminRole(user.id);
+        setIsAdmin(hasAdminRole);
       }
 
       setIsLoading(false);
     };
 
     fetchData();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        const hasAdminRole = await checkAdminRole(session.user.id);
+        setIsAdmin(hasAdminRole);
+      } else {
+        setIsAdmin(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   // Countdown timer
@@ -76,6 +101,35 @@ const MaintenanceMode = ({ children }: MaintenanceModeProps) => {
 
     return () => clearInterval(interval);
   }, [settings?.maintenance_end_date]);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginLoading(true);
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      toast.error('Identifiants incorrects');
+      setLoginLoading(false);
+      return;
+    }
+
+    if (data.user) {
+      const hasAdminRole = await checkAdminRole(data.user.id);
+      if (hasAdminRole) {
+        setIsAdmin(true);
+        toast.success('Connexion réussie');
+      } else {
+        await supabase.auth.signOut();
+        toast.error('Accès réservé aux administrateurs');
+      }
+    }
+    
+    setLoginLoading(false);
+  };
 
   const isAdminRoute = window.location.pathname.startsWith('/admin');
 
@@ -130,9 +184,68 @@ const MaintenanceMode = ({ children }: MaintenanceModeProps) => {
             </div>
           )}
           
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground mb-6">
             Merci de votre patience
           </p>
+
+          {/* Admin Login */}
+          {!showLogin ? (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setShowLogin(true)}
+              className="text-xs text-muted-foreground hover:text-foreground"
+            >
+              <LogIn className="h-3 w-3 mr-1" />
+              Accès administrateur
+            </Button>
+          ) : (
+            <div className="bg-card border rounded-lg p-4 mt-4 text-left">
+              <h3 className="font-medium mb-3 text-center">Connexion administrateur</h3>
+              <form onSubmit={handleLogin} className="space-y-3">
+                <div className="space-y-1">
+                  <Label htmlFor="email" className="text-xs">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="admin@exemple.com"
+                    required
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="password" className="text-xs">Mot de passe</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    required
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => setShowLogin(false)}
+                  >
+                    Annuler
+                  </Button>
+                  <Button type="submit" size="sm" className="flex-1" disabled={loginLoading}>
+                    {loginLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      'Connexion'
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </div>
+          )}
         </div>
       </div>
     );
