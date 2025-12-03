@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Save, Loader2, AlertTriangle, Search, MessageCircle, UserCircle, FileText } from 'lucide-react';
+import { Save, Loader2, AlertTriangle, Search, MessageCircle, UserCircle, FileText, Rocket } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -38,6 +38,7 @@ interface SiteSettings {
 const Settings = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [deploymentLoading, setDeploymentLoading] = useState(false);
 const [settings, setSettings] = useState<SiteSettings>({
     site_name: 'AutoPièces Pro',
     logo_url: '',
@@ -143,6 +144,32 @@ const [settings, setSettings] = useState<SiteSettings>({
     setSaving(false);
   };
 
+  const triggerDeploymentMode = async (action: 'start' | 'end') => {
+    setDeploymentLoading(true);
+    try {
+      const response = await supabase.functions.invoke('deployment-webhook', {
+        body: { action },
+      });
+      
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+      
+      toast.success(action === 'start' 
+        ? 'Mode déploiement activé' 
+        : 'Mode déploiement désactivé'
+      );
+      
+      // Refresh settings
+      await fetchSettings();
+    } catch (error) {
+      console.error('Error triggering deployment mode:', error);
+      toast.error('Erreur lors de l\'activation du mode déploiement');
+    } finally {
+      setDeploymentLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="p-8">
@@ -219,6 +246,45 @@ const [settings, setSettings] = useState<SiteSettings>({
                   />
                   <p className="text-xs text-muted-foreground">
                     Un compteur sera affiché aux visiteurs si défini
+                  </p>
+                </div>
+
+                {/* Quick Deployment Mode */}
+                <div className="pt-4 border-t">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Rocket className="h-4 w-4 text-primary" />
+                    <Label>Mode déploiement rapide</Label>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Activez rapidement la maintenance pendant un déploiement (5 min automatique)
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={deploymentLoading || settings.maintenance_mode}
+                      onClick={() => triggerDeploymentMode('start')}
+                    >
+                      {deploymentLoading ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      ) : (
+                        <Rocket className="h-4 w-4 mr-2" />
+                      )}
+                      Démarrer déploiement
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={deploymentLoading || !settings.maintenance_mode}
+                      onClick={() => triggerDeploymentMode('end')}
+                    >
+                      Terminer déploiement
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    💡 Pour automatiser avec Vercel: ajoutez un webhook vers <code className="bg-muted px-1 rounded">/functions/v1/deployment-webhook</code>
                   </p>
                 </div>
               </CardContent>
