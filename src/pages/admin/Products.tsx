@@ -1314,69 +1314,6 @@ const Products = () => {
                           </TooltipTrigger>
                           <TooltipContent>Cliquer pour modifier l'image</TooltipContent>
                         </Tooltip>
-                        
-                        {editingImageProductId === product.id && (
-                          <Dialog open={true} onOpenChange={(open) => !open && setEditingImageProductId(null)}>
-                            <DialogContent className="max-w-md">
-                              <DialogHeader>
-                                <DialogTitle>Modifier l'image</DialogTitle>
-                              </DialogHeader>
-                              <div className="space-y-4">
-                                {editingImageUrl && (
-                                  <div className="w-full h-48 bg-muted rounded overflow-hidden">
-                                    <img src={editingImageUrl} alt="" className="w-full h-full object-contain" />
-                                  </div>
-                                )}
-                                <div className="space-y-2">
-                                  <Label>URL de l'image</Label>
-                                  <Input
-                                    value={editingImageUrl}
-                                    onChange={(e) => setEditingImageUrl(e.target.value)}
-                                    placeholder="https://..."
-                                  />
-                                </div>
-                                <div className="flex gap-2">
-                                  <Button
-                                    variant="outline"
-                                    className="flex-1"
-                                    onClick={() => handleSearchImage(product)}
-                                    disabled={searchingImageFor === product.id || !product.reference}
-                                  >
-                                    {searchingImageFor === product.id ? (
-                                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                    ) : (
-                                      <Search className="h-4 w-4 mr-2" />
-                                    )}
-                                    Chercher Oscaro
-                                  </Button>
-                                </div>
-                                <div className="flex justify-end gap-2">
-                                  <Button variant="outline" onClick={() => setEditingImageProductId(null)}>
-                                    Annuler
-                                  </Button>
-                                  <Button 
-                                    className="btn-primary"
-                                    onClick={async () => {
-                                      const { error } = await supabase
-                                        .from('products')
-                                        .update({ image_url: editingImageUrl || null })
-                                        .eq('id', product.id);
-                                      if (error) {
-                                        toast.error('Erreur lors de la modification');
-                                      } else {
-                                        toast.success('Image modifiée');
-                                        setEditingImageProductId(null);
-                                        fetchProducts();
-                                      }
-                                    }}
-                                  >
-                                    Enregistrer
-                                  </Button>
-                                </div>
-                              </div>
-                            </DialogContent>
-                          </Dialog>
-                        )}
                       </TableCell>
                       <TableCell className="font-medium">{product.name}</TableCell>
                       <TableCell>{product.reference || '-'}</TableCell>
@@ -1426,6 +1363,74 @@ const Products = () => {
             </TableBody>
           </Table>
         </Card>
+
+        {/* Image Edit Dialog */}
+        <Dialog open={!!editingImageProductId} onOpenChange={(open) => !open && setEditingImageProductId(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Modifier l'image</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              {editingImageUrl && (
+                <div className="w-full h-48 bg-muted rounded overflow-hidden">
+                  <img src={editingImageUrl} alt="" className="w-full h-full object-contain" />
+                </div>
+              )}
+              <div className="space-y-2">
+                <Label>URL de l'image</Label>
+                <Input
+                  value={editingImageUrl}
+                  onChange={(e) => setEditingImageUrl(e.target.value)}
+                  placeholder="https://..."
+                />
+              </div>
+              {editingImageProductId && (
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => {
+                      const product = products.find(p => p.id === editingImageProductId);
+                      if (product) handleSearchImage(product);
+                    }}
+                    disabled={searchingImageFor === editingImageProductId || !products.find(p => p.id === editingImageProductId)?.reference}
+                  >
+                    {searchingImageFor === editingImageProductId ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Search className="h-4 w-4 mr-2" />
+                    )}
+                    Chercher Oscaro
+                  </Button>
+                </div>
+              )}
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setEditingImageProductId(null)}>
+                  Annuler
+                </Button>
+                <Button 
+                  className="btn-primary"
+                  onClick={async () => {
+                    if (!editingImageProductId) return;
+                    const { error } = await supabase
+                      .from('products')
+                      .update({ image_url: editingImageUrl || null })
+                      .eq('id', editingImageProductId);
+                    if (error) {
+                      toast.error('Erreur lors de la modification');
+                    } else {
+                      toast.success('Image modifiée');
+                      setEditingImageProductId(null);
+                      fetchProducts();
+                    }
+                  }}
+                >
+                  Enregistrer
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </>
   );
