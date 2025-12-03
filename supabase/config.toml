@@ -2,3 +2,12 @@ project_id = "rwkmatdghpqfawtmuujb"
 
 [functions.import-catalogue]
 verify_jwt = false
+
+[functions.deployment-webhook]
+verify_jwt = false
+
+[functions.scrape-oscaro-image]
+verify_jwt = false
+
+[functions.scrape-oscaro-batch]
+verify_jwt = false
