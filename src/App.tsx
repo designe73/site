@@ -27,6 +27,7 @@ import Orders from "./pages/admin/Orders";
 import Users from "./pages/admin/Users";
 import Settings from "./pages/admin/Settings";
 import AdminProfile from "./pages/admin/AdminProfile";
+import ImportCatalogue from "./pages/admin/ImportCatalogue";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -65,6 +66,7 @@ const App = () => (
                   <Route path="commandes" element={<Orders />} />
                   <Route path="utilisateurs" element={<Users />} />
                   <Route path="profil" element={<AdminProfile />} />
+                  <Route path="import" element={<ImportCatalogue />} />
                   <Route path="parametres" element={<Settings />} />
                 </Route>
                 

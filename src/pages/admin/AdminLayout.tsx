@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Package, FolderTree, Image, Settings, Users, ShoppingBag, LogOut, Car, UserCircle } from 'lucide-react';
+import { LayoutDashboard, Package, FolderTree, Image, Settings, Users, ShoppingBag, LogOut, Car, UserCircle, Upload } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -13,6 +13,7 @@ const navItems = [
   { icon: Image, label: 'Bannières', path: '/admin/bannieres' },
   { icon: ShoppingBag, label: 'Commandes', path: '/admin/commandes' },
   { icon: Users, label: 'Utilisateurs', path: '/admin/utilisateurs' },
+  { icon: Upload, label: 'Import Catalogue', path: '/admin/import' },
   { icon: UserCircle, label: 'Mon Profil', path: '/admin/profil' },
   { icon: Settings, label: 'Paramètres', path: '/admin/parametres' },
 ];
