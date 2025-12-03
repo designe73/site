@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Plus, Pencil, Trash2, Search, X, Car } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, X, Car, CheckSquare, Square } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -109,6 +109,24 @@ const Products = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [selectedVehicleIds, setSelectedVehicleIds] = useState<string[]>([]);
+  
+  // Bulk edit state
+  const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
+  const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
+  const [bulkForm, setBulkForm] = useState({
+    price: '',
+    stock: '',
+    category_id: '',
+    is_featured: false,
+    is_promo: false,
+  });
+  const [bulkUpdateFields, setBulkUpdateFields] = useState({
+    price: false,
+    stock: false,
+    category_id: false,
+    is_featured: false,
+    is_promo: false,
+  });
   
   // Spec forms state
   const [specType, setSpecType] = useState<SpecType>(null);
@@ -467,6 +485,94 @@ const Products = () => {
     );
   };
 
+  const toggleProductSelection = (productId: string) => {
+    setSelectedProductIds(prev =>
+      prev.includes(productId)
+        ? prev.filter(id => id !== productId)
+        : [...prev, productId]
+    );
+  };
+
+  const toggleAllProducts = () => {
+    if (selectedProductIds.length === filteredProducts.length) {
+      setSelectedProductIds([]);
+    } else {
+      setSelectedProductIds(filteredProducts.map(p => p.id));
+    }
+  };
+
+  const handleBulkEdit = async () => {
+    if (selectedProductIds.length === 0) {
+      toast.error('Sélectionnez des produits');
+      return;
+    }
+
+    const updates: Record<string, unknown> = {};
+    
+    if (bulkUpdateFields.price && bulkForm.price) {
+      updates.price = parseFloat(bulkForm.price);
+    }
+    if (bulkUpdateFields.stock && bulkForm.stock) {
+      updates.stock = parseInt(bulkForm.stock);
+    }
+    if (bulkUpdateFields.category_id && bulkForm.category_id) {
+      updates.category_id = bulkForm.category_id;
+    }
+    if (bulkUpdateFields.is_featured) {
+      updates.is_featured = bulkForm.is_featured;
+    }
+    if (bulkUpdateFields.is_promo) {
+      updates.is_promo = bulkForm.is_promo;
+    }
+
+    if (Object.keys(updates).length === 0) {
+      toast.error('Sélectionnez au moins un champ à modifier');
+      return;
+    }
+
+    const { error } = await supabase
+      .from('products')
+      .update(updates)
+      .in('id', selectedProductIds);
+
+    if (error) {
+      toast.error('Erreur lors de la modification en masse');
+      return;
+    }
+
+    toast.success(`${selectedProductIds.length} produits modifiés`);
+    setBulkDialogOpen(false);
+    setSelectedProductIds([]);
+    setBulkForm({ price: '', stock: '', category_id: '', is_featured: false, is_promo: false });
+    setBulkUpdateFields({ price: false, stock: false, category_id: false, is_featured: false, is_promo: false });
+    fetchProducts();
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedProductIds.length === 0) return;
+    
+    if (!confirm(`Supprimer ${selectedProductIds.length} produits ?`)) return;
+
+    for (const id of selectedProductIds) {
+      await supabase.from('product_vehicles').delete().eq('product_id', id);
+      await supabase.from('tire_specs').delete().eq('product_id', id);
+      await supabase.from('battery_specs').delete().eq('product_id', id);
+      await supabase.from('mechanical_specs').delete().eq('product_id', id);
+      await supabase.from('oil_specs').delete().eq('product_id', id);
+      await supabase.from('accessory_specs').delete().eq('product_id', id);
+    }
+
+    const { error } = await supabase.from('products').delete().in('id', selectedProductIds);
+    
+    if (error) {
+      toast.error('Erreur lors de la suppression');
+    } else {
+      toast.success(`${selectedProductIds.length} produits supprimés`);
+      setSelectedProductIds([]);
+      fetchProducts();
+    }
+  };
+
   const getVehicleLabel = (vehicle: Vehicle) => {
     return `${vehicle.brand} ${vehicle.model} ${vehicle.year}${vehicle.engine ? ` - ${vehicle.engine}` : ''}`;
   };
@@ -703,6 +809,138 @@ const Products = () => {
           </Dialog>
         </div>
 
+        {/* Bulk Actions Bar */}
+        {selectedProductIds.length > 0 && (
+          <Card className="p-4 mb-4 bg-primary/5 border-primary/20">
+            <div className="flex items-center justify-between">
+              <span className="font-medium">
+                {selectedProductIds.length} produit(s) sélectionné(s)
+              </span>
+              <div className="flex gap-2">
+                <Dialog open={bulkDialogOpen} onOpenChange={setBulkDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Pencil className="h-4 w-4 mr-2" />
+                      Modifier en masse
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Modification en masse</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-4">
+                        <Checkbox
+                          checked={bulkUpdateFields.price}
+                          onCheckedChange={(v) => setBulkUpdateFields({ ...bulkUpdateFields, price: !!v })}
+                        />
+                        <div className="flex-1 space-y-2">
+                          <Label>Prix (CFA)</Label>
+                          <Input
+                            type="number"
+                            value={bulkForm.price}
+                            onChange={(e) => setBulkForm({ ...bulkForm, price: e.target.value })}
+                            disabled={!bulkUpdateFields.price}
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-4">
+                        <Checkbox
+                          checked={bulkUpdateFields.stock}
+                          onCheckedChange={(v) => setBulkUpdateFields({ ...bulkUpdateFields, stock: !!v })}
+                        />
+                        <div className="flex-1 space-y-2">
+                          <Label>Stock</Label>
+                          <Input
+                            type="number"
+                            value={bulkForm.stock}
+                            onChange={(e) => setBulkForm({ ...bulkForm, stock: e.target.value })}
+                            disabled={!bulkUpdateFields.stock}
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-4">
+                        <Checkbox
+                          checked={bulkUpdateFields.category_id}
+                          onCheckedChange={(v) => setBulkUpdateFields({ ...bulkUpdateFields, category_id: !!v })}
+                        />
+                        <div className="flex-1 space-y-2">
+                          <Label>Catégorie</Label>
+                          <Select 
+                            value={bulkForm.category_id} 
+                            onValueChange={(v) => setBulkForm({ ...bulkForm, category_id: v })}
+                            disabled={!bulkUpdateFields.category_id}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Sélectionner" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {categories.map((cat) => (
+                                <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-4">
+                        <Checkbox
+                          checked={bulkUpdateFields.is_featured}
+                          onCheckedChange={(v) => setBulkUpdateFields({ ...bulkUpdateFields, is_featured: !!v })}
+                        />
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={bulkForm.is_featured}
+                            onCheckedChange={(v) => setBulkForm({ ...bulkForm, is_featured: v })}
+                            disabled={!bulkUpdateFields.is_featured}
+                          />
+                          <Label>Produit vedette</Label>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-4">
+                        <Checkbox
+                          checked={bulkUpdateFields.is_promo}
+                          onCheckedChange={(v) => setBulkUpdateFields({ ...bulkUpdateFields, is_promo: !!v })}
+                        />
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={bulkForm.is_promo}
+                            onCheckedChange={(v) => setBulkForm({ ...bulkForm, is_promo: v })}
+                            disabled={!bulkUpdateFields.is_promo}
+                          />
+                          <Label>En promotion</Label>
+                        </div>
+                      </div>
+                      
+                      <div className="flex justify-end gap-2">
+                        <Button variant="outline" onClick={() => setBulkDialogOpen(false)}>
+                          Annuler
+                        </Button>
+                        <Button onClick={handleBulkEdit} className="btn-primary">
+                          Appliquer
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+                
+                <Button variant="destructive" size="sm" onClick={handleBulkDelete}>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Supprimer
+                </Button>
+                
+                <Button variant="ghost" size="sm" onClick={() => setSelectedProductIds([])}>
+                  <X className="h-4 w-4 mr-2" />
+                  Désélectionner
+                </Button>
+              </div>
+            </div>
+          </Card>
+        )}
+
         <Card className="p-4 mb-6">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -719,6 +957,20 @@ const Products = () => {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-10">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={toggleAllProducts}
+                  >
+                    {selectedProductIds.length === filteredProducts.length && filteredProducts.length > 0 ? (
+                      <CheckSquare className="h-4 w-4" />
+                    ) : (
+                      <Square className="h-4 w-4" />
+                    )}
+                  </Button>
+                </TableHead>
                 <TableHead>Image</TableHead>
                 <TableHead>Nom</TableHead>
                 <TableHead>Référence</TableHead>
@@ -731,13 +983,13 @@ const Products = () => {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8">
+                  <TableCell colSpan={8} className="text-center py-8">
                     Chargement...
                   </TableCell>
                 </TableRow>
               ) : filteredProducts.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                     Aucun produit trouvé
                   </TableCell>
                 </TableRow>
@@ -745,7 +997,13 @@ const Products = () => {
               filteredProducts.map((product) => {
                   const category = categories.find(c => c.id === product.category_id);
                   return (
-                    <TableRow key={product.id}>
+                    <TableRow key={product.id} className={selectedProductIds.includes(product.id) ? 'bg-primary/5' : ''}>
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedProductIds.includes(product.id)}
+                          onCheckedChange={() => toggleProductSelection(product.id)}
+                        />
+                      </TableCell>
                       <TableCell>
                         <div className="w-12 h-12 bg-muted rounded overflow-hidden">
                           {product.image_url && (

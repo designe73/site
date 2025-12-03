@@ -19,6 +19,35 @@ interface CatalogueRow {
   referenceInterne: string;
 }
 
+// Default prices by category (in CFA)
+const DEFAULT_PRICES: Record<string, number> = {
+  'pneus': 45000,
+  'batteries': 65000,
+  'freinage': 25000,
+  'filtres': 8000,
+  'huiles': 15000,
+  'courroies': 12000,
+  'embrayage': 85000,
+  'suspension': 35000,
+  'direction': 42000,
+  'eclairage': 18000,
+  'demarrage': 55000,
+  'refroidissement': 28000,
+  'echappement': 38000,
+  'carrosserie': 22000,
+  'default': 15000
+};
+
+function getDefaultPrice(category: string): number {
+  const normalizedCat = category.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  for (const [key, price] of Object.entries(DEFAULT_PRICES)) {
+    if (normalizedCat.includes(key)) {
+      return price;
+    }
+  }
+  return DEFAULT_PRICES['default'];
+}
+
 function generateSlug(text: string): string {
   return text
     .toLowerCase()
@@ -175,6 +204,7 @@ serve(async (req) => {
         } else {
           const categoryId = categoryMap.get(row.categoriePiece);
           const slug = generateSlug(`${row.nomPiece}-${row.referenceInterne}`);
+          const defaultPrice = getDefaultPrice(row.categoriePiece);
           
           const { data: newProduct, error } = await supabase
             .from("products")
@@ -183,8 +213,8 @@ serve(async (req) => {
               slug,
               reference: row.referenceInterne,
               category_id: categoryId,
-              price: 0,
-              stock: 0,
+              price: defaultPrice,
+              stock: 10,
               description: `${row.nomPiece} - Compatible ${row.marque} ${row.modele}`,
               brand: row.marque,
             })
