@@ -148,6 +148,8 @@ const Products = () => {
   
   // Image search state
   const [searchingImageFor, setSearchingImageFor] = useState<string | null>(null);
+  const [bulkImageSearching, setBulkImageSearching] = useState(false);
+  const [bulkImageProgress, setBulkImageProgress] = useState({ current: 0, total: 0 });
   
   const [form, setForm] = useState({
     name: '',
@@ -518,6 +520,49 @@ const Products = () => {
     }
   };
 
+  const handleBulkImageSearch = async () => {
+    const productsWithoutImages = products.filter(p => !p.image_url && p.reference);
+    
+    if (productsWithoutImages.length === 0) {
+      toast.info('Tous les produits avec référence ont déjà une image');
+      return;
+    }
+
+    setBulkImageSearching(true);
+    setBulkImageProgress({ current: 0, total: productsWithoutImages.length });
+    
+    let successCount = 0;
+    let failCount = 0;
+
+    for (let i = 0; i < productsWithoutImages.length; i++) {
+      const product = productsWithoutImages[i];
+      setBulkImageProgress({ current: i + 1, total: productsWithoutImages.length });
+      
+      try {
+        const { data, error } = await supabase.functions.invoke('scrape-oscaro-image', {
+          body: { reference: product.reference, productId: product.id }
+        });
+        
+        if (!error && data?.images?.length > 0) {
+          successCount++;
+        } else {
+          failCount++;
+        }
+      } catch {
+        failCount++;
+      }
+      
+      // Small delay to avoid overwhelming the API
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+
+    setBulkImageSearching(false);
+    setBulkImageProgress({ current: 0, total: 0 });
+    fetchProducts();
+    
+    toast.success(`Recherche terminée: ${successCount} images trouvées, ${failCount} échecs`);
+  };
+
   const toggleVehicle = (vehicleId: string) => {
     setSelectedVehicleIds(prev => 
       prev.includes(vehicleId) 
@@ -677,13 +722,38 @@ const Products = () => {
       <div className="p-8">
         <div className="flex items-center justify-between mb-8">
           <h1 className="font-roboto-condensed text-3xl font-bold">Produits</h1>
-          <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
-            <DialogTrigger asChild>
-              <Button className="btn-primary">
-                <Plus className="h-5 w-5 mr-2" />
-                Ajouter un produit
-              </Button>
-            </DialogTrigger>
+          <div className="flex gap-2">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  onClick={handleBulkImageSearch}
+                  disabled={bulkImageSearching}
+                >
+                  {bulkImageSearching ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      {bulkImageProgress.current}/{bulkImageProgress.total}
+                    </>
+                  ) : (
+                    <>
+                      <ImageIcon className="h-4 w-4 mr-2" />
+                      Rechercher images
+                    </>
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                Rechercher les images Oscaro pour tous les produits sans image
+              </TooltipContent>
+            </Tooltip>
+            <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
+              <DialogTrigger asChild>
+                <Button className="btn-primary">
+                  <Plus className="h-5 w-5 mr-2" />
+                  Ajouter un produit
+                </Button>
+              </DialogTrigger>
             <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>
@@ -887,6 +957,7 @@ const Products = () => {
               </form>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
 
         {/* Bulk Actions Bar */}
