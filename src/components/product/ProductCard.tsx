@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { formatPrice } from '@/lib/formatPrice';
 import { useCart } from '@/hooks/useCart';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
+import { useWhatsAppNumber } from '@/hooks/useWhatsAppNumber';
 
 interface ProductCardProps {
   id: string;
@@ -32,6 +33,7 @@ const ProductCard = ({
 }: ProductCardProps) => {
   const { addToCart } = useCart();
   const { settings } = useSiteSettings();
+  const { getWhatsAppUrl } = useWhatsAppNumber();
   const discount = originalPrice ? Math.round((1 - price / originalPrice) * 100) : 0;
 
   const handleAddToCart = (e: React.MouseEvent) => {
@@ -43,9 +45,8 @@ const ProductCard = ({
   const handleWhatsApp = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const phone = (settings?.whatsapp_number || settings?.contact_phone)?.replace(/\s/g, '').replace('+', '') || '221771234567';
     const message = `Bonjour, je suis intéressé par ce produit:\n\n${name}\n${brand ? `Marque: ${brand}\n` : ''}${reference ? `Référence: ${reference}\n` : ''}Prix: ${formatPrice(price)}`;
-    const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+    const whatsappUrl = getWhatsAppUrl(message);
     window.open(whatsappUrl, '_blank');
   };
 

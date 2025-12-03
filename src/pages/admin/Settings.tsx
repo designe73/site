@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import WhatsAppNumbersManager from '@/components/admin/WhatsAppNumbersManager';
 
 interface SiteSettings {
   site_name: string;
@@ -249,6 +250,9 @@ const [settings, setSettings] = useState<SiteSettings>({
                 </div>
               </CardContent>
             </Card>
+
+            {/* WhatsApp Numbers Management */}
+            <WhatsAppNumbersManager />
 
             {/* SEO Settings */}
             <Card>
