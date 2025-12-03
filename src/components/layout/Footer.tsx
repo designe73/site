@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Phone, Mail, MapPin, Facebook, Instagram, Twitter, Settings } from 'lucide-react';
+import { Phone, Mail, MapPin, Facebook, Instagram, Twitter, Settings, Smartphone } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 
@@ -70,6 +70,12 @@ const Footer = () => {
           <div>
             <h3 className="font-roboto-condensed text-lg font-bold mb-4">Informations</h3>
             <ul className="space-y-2 text-sm">
+              <li>
+                <Link to="/installer" className="text-muted-foreground hover:text-primary transition-colors flex items-center gap-1">
+                  <Smartphone className="h-4 w-4" />
+                  Installer l'application
+                </Link>
+              </li>
               <li>
                 <Link to="/a-propos" className="text-muted-foreground hover:text-primary transition-colors">
                   À propos

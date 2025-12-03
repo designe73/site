@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Save, Loader2, AlertTriangle, Search, MessageCircle, UserCircle } from 'lucide-react';
+import { Save, Loader2, AlertTriangle, Search, MessageCircle, UserCircle, FileText } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,6 +27,12 @@ interface SiteSettings {
   seo_keywords: string;
   whatsapp_enabled: boolean;
   account_enabled: boolean;
+  invoice_company_name: string;
+  invoice_siret: string;
+  invoice_address: string;
+  invoice_phone: string;
+  invoice_email: string;
+  invoice_footer_text: string;
 }
 
 const Settings = () => {
@@ -48,6 +54,12 @@ const [settings, setSettings] = useState<SiteSettings>({
     seo_keywords: '',
     whatsapp_enabled: true,
     account_enabled: true,
+    invoice_company_name: '',
+    invoice_siret: '',
+    invoice_address: '',
+    invoice_phone: '',
+    invoice_email: '',
+    invoice_footer_text: '',
   });
 
   useEffect(() => {
@@ -79,6 +91,12 @@ const [settings, setSettings] = useState<SiteSettings>({
         seo_keywords: data.seo_keywords || '',
         whatsapp_enabled: data.whatsapp_enabled ?? true,
         account_enabled: data.account_enabled ?? true,
+        invoice_company_name: (data as any).invoice_company_name || '',
+        invoice_siret: (data as any).invoice_siret || '',
+        invoice_address: (data as any).invoice_address || '',
+        invoice_phone: (data as any).invoice_phone || '',
+        invoice_email: (data as any).invoice_email || '',
+        invoice_footer_text: (data as any).invoice_footer_text || '',
       });
     }
     setLoading(false);
@@ -253,6 +271,84 @@ const [settings, setSettings] = useState<SiteSettings>({
 
             {/* WhatsApp Numbers Management */}
             <WhatsAppNumbersManager />
+
+            {/* Invoice Settings */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Paramètres de facturation
+                </CardTitle>
+                <CardDescription>
+                  Personnalisez les informations affichées sur vos factures
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="invoice_company_name">Nom de l'entreprise</Label>
+                    <Input
+                      id="invoice_company_name"
+                      value={settings.invoice_company_name}
+                      onChange={(e) => setSettings({ ...settings, invoice_company_name: e.target.value })}
+                      placeholder="SenPièces SARL"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="invoice_siret">NINEA / Registre Commerce</Label>
+                    <Input
+                      id="invoice_siret"
+                      value={settings.invoice_siret}
+                      onChange={(e) => setSettings({ ...settings, invoice_siret: e.target.value })}
+                      placeholder="NINEA: 123456789"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="invoice_phone">Téléphone facture</Label>
+                    <Input
+                      id="invoice_phone"
+                      value={settings.invoice_phone}
+                      onChange={(e) => setSettings({ ...settings, invoice_phone: e.target.value })}
+                      placeholder="+221 77 123 45 67"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="invoice_email">Email facture</Label>
+                    <Input
+                      id="invoice_email"
+                      type="email"
+                      value={settings.invoice_email}
+                      onChange={(e) => setSettings({ ...settings, invoice_email: e.target.value })}
+                      placeholder="facturation@senpieces.sn"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="invoice_address">Adresse facture</Label>
+                  <Input
+                    id="invoice_address"
+                    value={settings.invoice_address}
+                    onChange={(e) => setSettings({ ...settings, invoice_address: e.target.value })}
+                    placeholder="123 Avenue Cheikh Anta Diop, Dakar, Sénégal"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="invoice_footer_text">Texte de pied de facture</Label>
+                  <Textarea
+                    id="invoice_footer_text"
+                    value={settings.invoice_footer_text}
+                    onChange={(e) => setSettings({ ...settings, invoice_footer_text: e.target.value })}
+                    placeholder="Merci pour votre confiance. Conditions: paiement à la livraison."
+                    rows={2}
+                  />
+                </div>
+              </CardContent>
+            </Card>
 
             {/* SEO Settings */}
             <Card>

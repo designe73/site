@@ -8,6 +8,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { CartProvider } from "@/hooks/useCart";
 import { SiteSettingsProvider } from "@/hooks/useSiteSettings";
 import MaintenanceMode from "@/components/MaintenanceMode";
+import PushNotificationPrompt from "@/components/notifications/PushNotificationPrompt";
 import { lazy, Suspense } from "react";
 
 // Eager load critical pages
@@ -37,6 +38,7 @@ const AdminProfile = lazy(() => import("./pages/admin/AdminProfile"));
 const ImportCatalogue = lazy(() => import("./pages/admin/ImportCatalogue"));
 const AdminNotifications = lazy(() => import("./pages/admin/Notifications"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const Install = lazy(() => import("./pages/Install"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -71,6 +73,7 @@ const App = () => (
                 }}
               >
                 <MaintenanceMode>
+                  <PushNotificationPrompt />
                   <Suspense fallback={<PageLoader />}>
                     <Routes>
                       <Route path="/" element={<Index />} />
@@ -82,6 +85,7 @@ const App = () => (
                       <Route path="/categorie/:slug" element={<CategoryProducts />} />
                       <Route path="/produit/:slug" element={<ProductDetail />} />
                       <Route path="/recherche" element={<SearchResults />} />
+                      <Route path="/installer" element={<Install />} />
                       
                       {/* Admin auth routes */}
                       <Route path="/admin/connexion" element={<AdminLogin />} />
