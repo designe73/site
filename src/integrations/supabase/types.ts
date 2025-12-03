@@ -653,6 +653,33 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_numbers: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean | null
+          name: string | null
+          phone_number: string
+          position: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string | null
+          phone_number: string
+          position?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string | null
+          phone_number?: string
+          position?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

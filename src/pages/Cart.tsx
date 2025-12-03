@@ -7,12 +7,14 @@ import Layout from '@/components/layout/Layout';
 import { useCart } from '@/hooks/useCart';
 import { useAuth } from '@/hooks/useAuth';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
+import { useWhatsAppNumber } from '@/hooks/useWhatsAppNumber';
 import { formatPrice } from '@/lib/formatPrice';
 
 const Cart = () => {
   const { items, loading, updateQuantity, removeFromCart, totalPrice } = useCart();
   const { user } = useAuth();
   const { settings } = useSiteSettings();
+  const { getWhatsAppUrl } = useWhatsAppNumber();
 
   if (!user) {
     return (
@@ -84,8 +86,7 @@ const Cart = () => {
     message += `Livraison: ${shippingCost === 0 ? 'Gratuite' : formatPrice(shippingCost)}\n`;
     message += `Total: ${formatPrice(finalTotal)}`;
     
-    const phone = (settings?.whatsapp_number || settings?.contact_phone)?.replace(/\s/g, '').replace('+', '') || '221771234567';
-    const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+    const whatsappUrl = getWhatsAppUrl(message);
     window.open(whatsappUrl, '_blank');
   };
 
