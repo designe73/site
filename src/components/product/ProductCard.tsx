@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { ShoppingCart, Check, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { OptimizedImage } from '@/components/ui/optimized-image';
 import { formatPrice } from '@/lib/formatPrice';
 import { useCart } from '@/hooks/useCart';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
@@ -54,17 +55,17 @@ const ProductCard = ({
     <Link to={`/produit/${slug}`} className="card-product group block">
       {/* Image */}
       <div className="relative aspect-square bg-muted overflow-hidden">
-        {imageUrl ? (
-          <img
-            src={imageUrl}
-            alt={name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-            <ShoppingCart className="h-12 w-12" />
-          </div>
-        )}
+        <OptimizedImage
+          src={imageUrl}
+          alt={name}
+          width={300}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          fallback={
+            <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+              <ShoppingCart className="h-12 w-12" />
+            </div>
+          }
+        />
         
         {/* Badges */}
         <div className="absolute top-2 left-2 flex flex-col gap-1">

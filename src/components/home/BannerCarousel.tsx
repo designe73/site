@@ -15,6 +15,7 @@ interface Banner {
 const BannerCarousel = () => {
   const [banners, setBanners] = useState<Banner[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   useEffect(() => {
     const fetchBanners = async () => {
@@ -40,11 +41,22 @@ const BannerCarousel = () => {
     }
   }, [banners.length]);
 
+  // Preload next image
+  useEffect(() => {
+    if (banners.length > 1) {
+      const nextIndex = (currentIndex + 1) % banners.length;
+      const img = new Image();
+      img.src = banners[nextIndex]?.image_url || '';
+    }
+  }, [currentIndex, banners]);
+
   const goToPrevious = () => {
+    setImageLoaded(false);
     setCurrentIndex((prev) => (prev - 1 + banners.length) % banners.length);
   };
 
   const goToNext = () => {
+    setImageLoaded(false);
     setCurrentIndex((prev) => (prev + 1) % banners.length);
   };
 
@@ -70,11 +82,16 @@ const BannerCarousel = () => {
 
   return (
     <div className="relative h-[300px] md:h-[400px] rounded-xl overflow-hidden group">
-      {/* Background image */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center transition-all duration-700"
-        style={{ backgroundImage: `url(${currentBanner.image_url})` }}
-      >
+      {/* Background image with lazy loading */}
+      <div className="absolute inset-0">
+        <img
+          src={currentBanner.image_url}
+          alt={currentBanner.title}
+          loading={currentIndex === 0 ? 'eager' : 'lazy'}
+          decoding="async"
+          onLoad={() => setImageLoaded(true)}
+          className={`w-full h-full object-cover transition-opacity duration-500 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+        />
         <div className="absolute inset-0 bg-gradient-to-r from-dark/90 via-dark/60 to-transparent" />
       </div>
 
