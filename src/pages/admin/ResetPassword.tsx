@@ -1,50 +1,59 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Shield, Lock, Mail, LogIn, AlertCircle, ArrowLeft } from 'lucide-react';
+import { Shield, Lock, ArrowLeft, KeyRound } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-const AdminLogin = () => {
-  const [email, setEmail] = useState('');
+const ResetPassword = () => {
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isValidSession, setIsValidSession] = useState(false);
   const navigate = useNavigate();
-  const { signIn, isAdmin } = useAuth();
   const { toast } = useToast();
 
-  // Redirect if already logged in as admin
-  if (isAdmin) {
-    navigate('/admin');
-    return null;
-  }
+  useEffect(() => {
+    // Check if we have a valid recovery session
+    supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setIsValidSession(true);
+      }
+    });
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (password !== confirmPassword) {
+      setError('Les mots de passe ne correspondent pas');
+      return;
+    }
+
+    if (password.length < 6) {
+      setError('Le mot de passe doit contenir au moins 6 caractères');
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const { error } = await signIn(email, password);
-      
+      const { error } = await supabase.auth.updateUser({ password });
+
       if (error) {
-        setError('Email ou mot de passe incorrect');
-        toast({
-          variant: 'destructive',
-          title: 'Erreur de connexion',
-          description: 'Email ou mot de passe incorrect',
-        });
+        setError(error.message);
       } else {
         toast({
-          title: 'Connexion réussie',
-          description: 'Bienvenue dans le back-office',
+          title: 'Mot de passe mis à jour',
+          description: 'Vous pouvez maintenant vous connecter avec votre nouveau mot de passe',
         });
-        navigate('/admin');
+        navigate('/admin/connexion');
       }
     } catch (err) {
       setError('Une erreur est survenue');
@@ -61,13 +70,13 @@ const AdminLogin = () => {
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-orange-light rounded-full blur-3xl animate-pulse-slow" style={{ animationDelay: '1s' }} />
       </div>
 
-      {/* Back to home button */}
+      {/* Back to login button */}
       <Link 
-        to="/" 
+        to="/admin/connexion" 
         className="absolute top-6 left-6 flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
       >
         <ArrowLeft className="h-5 w-5" />
-        <span className="hidden sm:inline">Retour au site</span>
+        <span className="hidden sm:inline">Retour à la connexion</span>
       </Link>
 
       <Card className="w-full max-w-md shadow-2xl border-2 border-border/50 backdrop-blur-sm bg-card/95 animate-slide-up relative z-10">
@@ -84,17 +93,17 @@ const AdminLogin = () => {
             </div>
           </div>
 
-          {/* Shield icon with gradient background */}
+          {/* Key icon with gradient background */}
           <div className="mx-auto w-20 h-20 bg-gradient-orange rounded-full flex items-center justify-center shadow-lg ring-4 ring-primary/20">
-            <Shield className="h-10 w-10 text-white" />
+            <KeyRound className="h-10 w-10 text-white" />
           </div>
 
           <div>
             <CardTitle className="text-3xl font-roboto-condensed font-bold text-foreground">
-              Back-Office
+              Nouveau mot de passe
             </CardTitle>
             <CardDescription className="text-base mt-2 text-muted-foreground">
-              Espace d'administration sécurisé
+              Créez un nouveau mot de passe sécurisé
             </CardDescription>
           </div>
         </CardHeader>
@@ -103,47 +112,42 @@ const AdminLogin = () => {
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
               <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="email" className="flex items-center gap-2 text-foreground font-medium">
-                <Mail className="h-4 w-4 text-primary" />
-                Email administrateur
+              <Label htmlFor="password" className="flex items-center gap-2 text-foreground font-medium">
+                <Lock className="h-4 w-4 text-primary" />
+                Nouveau mot de passe
               </Label>
-              <div className="relative">
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="admin@senpieces.sn"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  disabled={loading}
-                  className="h-12 pl-4 pr-4 border-2 focus:border-primary transition-all"
-                />
-              </div>
+              <Input
+                id="password"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                disabled={loading}
+                className="h-12 border-2 focus:border-primary transition-all"
+              />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="flex items-center gap-2 text-foreground font-medium">
+              <Label htmlFor="confirmPassword" className="flex items-center gap-2 text-foreground font-medium">
                 <Lock className="h-4 w-4 text-primary" />
-                Mot de passe
+                Confirmer le mot de passe
               </Label>
-              <div className="relative">
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  disabled={loading}
-                  className="h-12 pl-4 pr-4 border-2 focus:border-primary transition-all"
-                />
-              </div>
+              <Input
+                id="confirmPassword"
+                type="password"
+                placeholder="••••••••"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                disabled={loading}
+                className="h-12 border-2 focus:border-primary transition-all"
+              />
             </div>
 
             <Button
@@ -154,45 +158,17 @@ const AdminLogin = () => {
               {loading ? (
                 <div className="flex items-center gap-2">
                   <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Connexion en cours...
+                  Mise à jour...
                 </div>
               ) : (
-                <>
-                  <LogIn className="mr-2 h-5 w-5" />
-                  Accéder au Back-Office
-                </>
+                'Mettre à jour le mot de passe'
               )}
             </Button>
           </form>
-
-          <div className="mt-6 text-center">
-            <Link 
-              to="/admin/mot-de-passe-oublie"
-              className="text-sm text-primary hover:underline"
-            >
-              Mot de passe oublié ?
-            </Link>
-          </div>
-
-          <div className="mt-6 text-center space-y-4">
-            <div className="h-px bg-border" />
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">
-                Premier utilisateur ? Le compte sera automatiquement admin
-              </p>
-              <Button
-                variant="outline"
-                className="text-primary hover:text-primary hover:bg-primary/5 border-primary/20 hover:border-primary"
-                onClick={() => navigate('/auth')}
-              >
-                Créer un compte
-              </Button>
-            </div>
-          </div>
         </CardContent>
       </Card>
     </div>
   );
 };
 
-export default AdminLogin;
+export default ResetPassword;
