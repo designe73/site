@@ -9,6 +9,7 @@ import { CartProvider } from "@/hooks/useCart";
 import { SiteSettingsProvider } from "@/hooks/useSiteSettings";
 import MaintenanceMode from "@/components/MaintenanceMode";
 import PushNotificationPrompt from "@/components/notifications/PushNotificationPrompt";
+import PWAInstallPrompt from "@/components/pwa/PWAInstallPrompt";
 import { lazy, Suspense } from "react";
 
 // Eager load critical pages
@@ -74,6 +75,7 @@ const App = () => (
               >
                 <MaintenanceMode>
                   <PushNotificationPrompt />
+                  <PWAInstallPrompt />
                   <Suspense fallback={<PageLoader />}>
                     <Routes>
                       <Route path="/" element={<Index />} />
