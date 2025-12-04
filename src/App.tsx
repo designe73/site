@@ -9,7 +9,6 @@ import { CartProvider } from "@/hooks/useCart";
 import { SiteSettingsProvider } from "@/hooks/useSiteSettings";
 import MaintenanceMode from "@/components/MaintenanceMode";
 import PushNotificationPrompt from "@/components/notifications/PushNotificationPrompt";
-import PWAInstallPrompt from "@/components/pwa/PWAInstallPrompt";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { lazy, Suspense } from "react";
 
@@ -41,7 +40,6 @@ const ImportCatalogue = lazy(() => import("./pages/admin/ImportCatalogue"));
 const AdminNotifications = lazy(() => import("./pages/admin/Notifications"));
 const CategoryBanners = lazy(() => import("./pages/admin/CategoryBanners"));
 const NotFound = lazy(() => import("./pages/NotFound"));
-const Install = lazy(() => import("./pages/Install"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -81,7 +79,6 @@ const App = () => (
                 >
                   <MaintenanceMode>
                     <PushNotificationPrompt />
-                    <PWAInstallPrompt />
                     <Suspense fallback={<PageLoader />}>
                       <Routes>
                         <Route path="/" element={<Index />} />
@@ -93,7 +90,6 @@ const App = () => (
                         <Route path="/categorie/:slug" element={<CategoryProducts />} />
                         <Route path="/produit/:slug" element={<ProductDetail />} />
                         <Route path="/recherche" element={<SearchResults />} />
-                        <Route path="/installer" element={<Install />} />
                         
                         {/* Admin auth routes */}
                         <Route path="/admin/connexion" element={<AdminLogin />} />
