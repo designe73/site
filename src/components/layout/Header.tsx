@@ -144,15 +144,96 @@ const Header = () => {
                   )}
                 </DropdownMenuContent>
               </DropdownMenu>
+              // ... [Code précédent non modifié]
 
-              {/* Cart - Seulement pour les non-admins pour éviter les erreurs de chargement */}
-              {!isAdmin && (
-                <Button variant="ghost" size="icon" className="relative" asChild>
-                  <Link to="/panier">
-                    <ShoppingCart className="h-6 w-6" />
-                    {totalItems > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
-                        {totalItems}
-                      </span>
-                    )}
-                  </Link>
+                  ) : (
+                    <>
+                      <DropdownMenuItem asChild>
+                        <Link to="/connexion">Connexion</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link to="/inscription">Inscription</Link>
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Cart - Seulement pour les non-admins pour éviter les erreurs de chargement */}
+              {!isAdmin && (
+                <Button variant="ghost" size="icon" className="relative" asChild>
+                  <Link to="/panier">
+                    <ShoppingCart className="h-6 w-6" />
+                    {totalItems > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                        {totalItems}
+                      </span>
+                    )}
+                  </Link>
+                </Button> // <-- Manquait la fermeture de Button
+              )} // <-- Manquait la fermeture du conditionnel {!isAdmin && (...) }
+
+
+              {/* Mobile menu toggle */}
+              <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+                {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              </Button>
+            </div>
+          </div>
+
+          {/* Mobile search */}
+          <div className="mt-4 md:hidden">
+            <GlobalSearch isMobile />
+          </div>
+        </div>
+
+        {/* Navigation */}
+        <nav className="bg-secondary text-secondary-foreground">
+          <div className="container">
+            <ul className={`${mobileMenuOpen ? 'flex' : 'hidden'} md:flex flex-col md:flex-row items-start md:items-center gap-1 py-2`}>
+              <li>
+                <Link to="/categories" className="block px-4 py-2 nav-link hover:bg-slate-200 rounded transition-colors">
+                  Toutes les catégories
+                </Link>
+              </li>
+              <li>
+                <Link to="/categorie/freinage" className="block px-4 py-2 nav-link hover:bg-slate-200 rounded transition-colors">
+                  Freinage
+                </Link>
+              </li>
+              <li>
+                <Link to="/categorie/filtration" className="block px-4 py-2 nav-link hover:bg-slate-200 rounded transition-colors">
+                  Filtration
+                </Link>
+              </li>
+              <li>
+                <Link to="/categorie/moteur" className="block px-4 py-2 nav-link hover:bg-slate-200 rounded transition-colors">
+                  Moteur
+                </Link>
+              </li>
+              <li>
+                <Link to="/categorie/suspension" className="block px-4 py-2 nav-link hover:bg-slate-200 rounded transition-colors">
+                  Suspension
+                </Link>
+              </li>
+              <li>
+                <Link to="/promotions" className="block px-4 py-2 text-primary font-medium hover:bg-slate-200 rounded transition-colors">
+                  Promotions
+                </Link>
+              </li>
+              {isModerator && (
+                <li className="md:ml-auto mt-2 md:mt-0 w-full md:w-auto">
+                  <Link to="/admin" className="flex px-4 py-2 bg-primary text-white font-bold rounded hover:bg-primary/90 transition-colors items-center gap-2 justify-center">
+                    <Settings className="h-4 w-4" />
+                    <span>Administration</span>
+                  </Link>
+                </li>
+              )}
+            </ul>
+          </div>
+        </nav>
+      </div>
+    </header>
+  );
+};
+export default Header;
