@@ -4,16 +4,41 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
-// J'ai commenté les providers qui demandent Supabase pour tester
-// import { AuthProvider } from "@/hooks/useAuth";
-// import { CartProvider } from "@/hooks/useCart";
+import { AuthProvider } from "@/hooks/useAuth"; // ✅ On réactive ceci
+import { CartProvider } from "@/hooks/useCart"; // ✅ On réactive ceci
 import { SiteSettingsProvider } from "@/hooks/useSiteSettings";
 import MaintenanceMode from "@/components/MaintenanceMode";
+import PushNotificationPrompt from "@/components/notifications/PushNotificationPrompt";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { lazy, Suspense } from "react";
-import Index from "./pages/Index";
 
-// On garde une route simple pour le test
+// Eager load critical pages
+import Index from "./pages/Index";
+import Auth from "./pages/Auth";
+
+// Lazy load non-critical pages
+const Cart = lazy(() => import("./pages/Cart"));
+const Account = lazy(() => import("./pages/Account"));
+const Categories = lazy(() => import("./pages/Categories"));
+const CategoryProducts = lazy(() => import("./pages/CategoryProducts"));
+const ProductDetail = lazy(() => import("./pages/ProductDetail"));
+const SearchResults = lazy(() => import("./pages/SearchResults"));
+const AdminLayout = lazy(() => import("./pages/admin/AdminLayout"));
+const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
+const ForgotPassword = lazy(() => import("./pages/admin/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/admin/ResetPassword"));
+const Dashboard = lazy(() => import("./pages/admin/Dashboard"));
+const Products = lazy(() => import("./pages/admin/Products"));
+const AdminCategories = lazy(() => import("./pages/admin/Categories"));
+const Vehicles = lazy(() => import("./pages/admin/Vehicles"));
+const Banners = lazy(() => import("./pages/admin/Banners"));
+const Orders = lazy(() => import("./pages/admin/Orders"));
+const Users = lazy(() => import("./pages/admin/Users"));
+const Settings = lazy(() => import("./pages/admin/Settings"));
+const AdminProfile = lazy(() => import("./pages/admin/AdminProfile"));
+const ImportCatalogue = lazy(() => import("./pages/admin/ImportCatalogue"));
+const AdminNotifications = lazy(() => import("./pages/admin/Notifications"));
+const CategoryBanners = lazy(() => import("./pages/admin/CategoryBanners"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
@@ -38,20 +63,54 @@ const App = () => (
   <ErrorBoundary>
     <HelmetProvider context={helmetContext}>
       <QueryClientProvider client={queryClient}>
-        {/* On a retiré AuthProvider temporairement */}
-          {/* <CartProvider> */}
+        {/* ✅ L'AuthProvider doit envelopper tout le reste pour que useAuth fonctionne */}
+        <AuthProvider>
+          <CartProvider>
             <SiteSettingsProvider>
               <TooltipProvider>
                 <Toaster />
                 <Sonner />
-                <BrowserRouter>
+                <BrowserRouter
+                  future={{
+                    v7_startTransition: true,
+                    v7_relativeSplatPath: true,
+                  }}
+                >
                   <MaintenanceMode>
+                    <PushNotificationPrompt />
                     <Suspense fallback={<PageLoader />}>
-                      <div className="p-4 text-center bg-green-100 text-green-800 font-bold">
-                        MODE TEST : AUTHENTIFICATION DÉSACTIVÉE
-                      </div>
                       <Routes>
                         <Route path="/" element={<Index />} />
+                        <Route path="/connexion" element={<Auth />} />
+                        <Route path="/inscription" element={<Auth />} />
+                        <Route path="/panier" element={<Cart />} />
+                        <Route path="/mon-compte" element={<Account />} />
+                        <Route path="/categories" element={<Categories />} />
+                        <Route path="/categorie/:slug" element={<CategoryProducts />} />
+                        <Route path="/produit/:slug" element={<ProductDetail />} />
+                        <Route path="/recherche" element={<SearchResults />} />
+                        
+                        {/* Admin auth routes */}
+                        <Route path="/admin/connexion" element={<AdminLogin />} />
+                        <Route path="/admin/mot-de-passe-oublie" element={<ForgotPassword />} />
+                        <Route path="/admin/reset-password" element={<ResetPassword />} />
+                        
+                        {/* Admin routes */}
+                        <Route path="/admin" element={<AdminLayout />}>
+                          <Route index element={<Dashboard />} />
+                          <Route path="produits" element={<Products />} />
+                          <Route path="categories" element={<AdminCategories />} />
+                          <Route path="vehicules" element={<Vehicles />} />
+                          <Route path="bannieres" element={<Banners />} />
+                          <Route path="bannieres-categories" element={<CategoryBanners />} />
+                          <Route path="commandes" element={<Orders />} />
+                          <Route path="notifications" element={<AdminNotifications />} />
+                          <Route path="utilisateurs" element={<Users />} />
+                          <Route path="profil" element={<AdminProfile />} />
+                          <Route path="import" element={<ImportCatalogue />} />
+                          <Route path="parametres" element={<Settings />} />
+                        </Route>
+                        
                         <Route path="*" element={<NotFound />} />
                       </Routes>
                     </Suspense>
@@ -59,7 +118,8 @@ const App = () => (
                 </BrowserRouter>
               </TooltipProvider>
             </SiteSettingsProvider>
-          {/* </CartProvider> */}
+          </CartProvider>
+        </AuthProvider>
       </QueryClientProvider>
     </HelmetProvider>
   </ErrorBoundary>
