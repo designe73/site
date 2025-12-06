@@ -1,147 +1,215 @@
-import React, { useState, useEffect, useContext, createContext } from 'react';
-// IMPORTATION EXTERNE DE AuthContext SUPPRIMÉE pour contourner l'erreur de résolution de module.
-// On suppose que AppProviders exporte AuthContext, mais nous allons le redéfinir ici pour la compilation.
+import { useEffect, useState } from 'react';
+import { Helmet } from 'react-helmet-async';
+import { Package, ShoppingBag, Users, TrendingUp, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { supabase } from '@/integrations/supabase/client';
+import { formatPrice } from '@/lib/formatPrice';
+import { Link } from 'react-router-dom';
 
-// NOTE IMPORTANTE: Dans une application réelle, AuthContext DOIT être importé depuis
-// le fichier AppProviders ou AuthProvider. Cette redéfinition est un contournement temporaire
-// pour l'erreur de compilation de l'environnement.
-const AuthContext = createContext({ user: null });
+interface Stats {
+  totalProducts: number;
+  totalOrders: number;
+  totalUsers: number;
+  totalRevenue: number;
+  lowStockProducts: number;
+  outOfStockProducts: number;
+  pendingOrders: number;
+}
 
-import { Settings, BarChart, XCircle } from 'lucide-react'; 
-
-// Composant de remplacement minimal du Spinner (pour la démo)
-const Spinner = ({ className = "h-8 w-8 text-primary animate-spin" }) => (
-    <svg 
-      className={className} 
-      xmlns="http://www.w3.org/2000/svg" 
-      fill="none" 
-      viewBox="0 0 24 24"
-    >
-      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-    </svg>
-);
-
+interface LowStockProduct {
+  id: string;
+  name: string;
+  stock: number;
+  brand: string | null;
+}
 
 const Dashboard = () => {
-    // Récupérer l'état de l'utilisateur depuis le contexte
-    // NOTE: Si AuthContext n'est pas fourni par un parent, 'user' sera { user: null } par défaut.
-    const { user } = useContext(AuthContext);
-    
-    const [stats, setStats] = useState(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState(null);
+  const [stats, setStats] = useState<Stats>({
+    totalProducts: 0,
+    totalOrders: 0,
+    totalUsers: 0,
+    totalRevenue: 0,
+    lowStockProducts: 0,
+    outOfStockProducts: 0,
+    pendingOrders: 0,
+  });
+  const [lowStockProducts, setLowStockProducts] = useState<LowStockProduct[]>([]);
+  const [loading, setLoading] = useState(true);
 
-    // ------------------------------------------------
-    // GARDE DE SÉCURITÉ ET D'AUTORISATION
-    // ------------------------------------------------
-    // S'assurer que 'user' existe et que le rôle est 'admin'
-    if (!user || user.role !== 'admin') {
-        return (
-            <div className="container py-12 text-center">
-                <XCircle className="h-10 w-10 text-red-500 mx-auto mb-4" />
-                <h1 className="text-2xl font-bold text-red-600">Accès Refusé (403)</h1>
-                <p className="text-muted-foreground">Vous n'avez pas les permissions nécessaires pour accéder au Tableau de Bord.</p>
-            </div>
-        );
-    }
+  useEffect(() => {
+    const fetchStats = async () => {
+      const [
+        productsRes,
+        ordersRes,
+        profilesRes,
+        lowStockRes,
+        outOfStockRes,
+        pendingOrdersRes
+      ] = await Promise.all([
+        supabase.from('products').select('id', { count: 'exact', head: true }),
+        supabase.from('orders').select('id, total'),
+        supabase.from('profiles').select('id', { count: 'exact', head: true }),
+        supabase.from('products').select('id', { count: 'exact', head: true }).gt('stock', 0).lte('stock', 10),
+        supabase.from('products').select('id', { count: 'exact', head: true }).eq('stock', 0),
+        supabase.from('orders').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+      ]);
 
-    // ------------------------------------------------
-    // LOGIQUE DE RÉCUPÉRATION DES STATISTIQUES COMPLEXES
-    // ------------------------------------------------
-    useEffect(() => {
-        const fetchComplexStatistics = async () => {
-            setIsLoading(true);
-            setError(null);
-            
-            try {
-                // Simuler l'appel API complexe ou le calcul intensif
-                // Remplacez cette logique par VOTRE code de statistiques.
-                await new Promise(resolve => setTimeout(resolve, 1500)); 
-                
-                // Simuler un échec pour le test
-                // if (Math.random() < 0.2) throw new Error("Erreur de calcul des KPIs.");
+      const totalRevenue = ordersRes.data?.reduce((sum, order) => sum + (order.total || 0), 0) || 0;
 
-                const mockStats = {
-                    totalOrders: 1250,
-                    revenue: '9.8M CFA',
-                    bestSeller: 'Plaquettes de frein avant'
-                };
+      // Fetch low stock products details
+      const { data: lowStockData } = await supabase
+        .from('products')
+        .select('id, name, stock, brand')
+        .gt('stock', 0)
+        .lte('stock', 10)
+        .order('stock', { ascending: true })
+        .limit(5);
 
-                setStats(mockStats);
-            } catch (err) {
-                console.error("Erreur lors du chargement des statistiques:", err);
-                setError("Impossible de charger les données du tableau de bord. Veuillez réessayer.");
-            } finally {
-                setIsLoading(false);
-            }
-        };
+      setStats({
+        totalProducts: productsRes.count || 0,
+        totalOrders: ordersRes.data?.length || 0,
+        totalUsers: profilesRes.count || 0,
+        totalRevenue,
+        lowStockProducts: lowStockRes.count || 0,
+        outOfStockProducts: outOfStockRes.count || 0,
+        pendingOrders: pendingOrdersRes.count || 0,
+      });
+      setLowStockProducts(lowStockData || []);
+      setLoading(false);
+    };
+    fetchStats();
+  }, []);
 
-        fetchComplexStatistics();
-    }, []);
+  const statCards = [
+    { icon: Package, label: 'Produits', value: stats.totalProducts, color: 'text-blue-500' },
+    { icon: ShoppingBag, label: 'Commandes', value: stats.totalOrders, color: 'text-green-500' },
+    { icon: Users, label: 'Utilisateurs', value: stats.totalUsers, color: 'text-purple-500' },
+    { icon: TrendingUp, label: 'Revenus totaux', value: formatPrice(stats.totalRevenue), color: 'text-primary' },
+  ];
 
-    // ------------------------------------------------
-    // RENDU CONDITIONNEL ET SÉCURISÉ
-    // ------------------------------------------------
+  const alertCards = [
+    { icon: AlertTriangle, label: 'Stock faible', value: stats.lowStockProducts, color: 'text-warning', bgColor: 'bg-warning/10' },
+    { icon: AlertTriangle, label: 'Rupture de stock', value: stats.outOfStockProducts, color: 'text-destructive', bgColor: 'bg-destructive/10' },
+    { icon: CheckCircle, label: 'Commandes en attente', value: stats.pendingOrders, color: 'text-blue-500', bgColor: 'bg-blue-500/10' },
+  ];
 
-    if (isLoading) {
-        return (
-            <div className="container py-12 flex items-center justify-center min-h-[300px]">
-                <div className="flex flex-col items-center p-6 bg-card rounded-lg shadow-xl">
-                    <Spinner />
-                    <p className="mt-4 text-lg text-primary">Chargement des Statistiques...</p>
+  return (
+    <>
+      <Helmet>
+        <title>Tableau de bord | Admin AutoPièces</title>
+      </Helmet>
+
+      <div className="p-8">
+        <h1 className="font-roboto-condensed text-3xl font-bold mb-8">Tableau de bord</h1>
+
+        {/* Main Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+          {statCards.map((stat, index) => (
+            <Card key={index}>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  {stat.label}
+                </CardTitle>
+                <stat.icon className={`h-5 w-5 ${stat.color}`} />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {loading ? (
+                    <div className="h-8 w-24 bg-muted animate-pulse rounded" />
+                  ) : (
+                    stat.value
+                  )}
                 </div>
-            </div>
-        );
-    }
-    
-    if (error) {
-        return (
-            <div className="container py-12 text-center p-8 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-lg">
-                <p className="font-bold">Erreur de Données :</p>
-                <p>{error}</p>
-            </div>
-        );
-    }
-    
-    // Rendu du Tableau de Bord
-    return (
-        <div className="container mx-auto py-8">
-            <header className="flex items-center justify-between mb-8">
-                <h1 className="font-roboto-condensed text-3xl font-bold flex items-center gap-3">
-                    <BarChart className="h-7 w-7 text-primary" /> Tableau de Bord Principal
-                </h1>
-                <button className="inline-flex items-center justify-center px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/90 transition-colors">
-                    <Settings className="h-4 w-4 mr-2" /> Paramètres
-                </button>
-            </header>
-
-            {/* Intégrez ici le RENDU de votre code de statistiques complexe (graphiques, cartes, etc.) */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <StatsCard title="Commandes Totales" value={stats.totalOrders} />
-                <StatsCard title="Revenus Générés" value={stats.revenue} />
-                <StatsCard title="Meilleure Vente" value={stats.bestSeller} />
-            </div>
-
-            <section className="mt-10 p-6 bg-card rounded-xl shadow-lg border border-border">
-                <h2 className="text-xl font-bold mb-4">Analyse Détaillée (Intégrer le Code Complexe ici)</h2>
-                <p className="text-muted-foreground">
-                    *Placez votre logique de graphiques complexes (D3.js, Recharts, etc.) ici.*
-                </p>
-                {/* Exemple d'un point où votre code complexe est réactivé : */}
-                {/* <YourComplexChart data={stats.detailedData} /> */}
-            </section>
-
+              </CardContent>
+            </Card>
+          ))}
         </div>
-    );
-};
 
-// Composant d'aide pour l'affichage des cartes de statistiques
-const StatsCard = ({ title, value }) => (
-    <div className="p-5 bg-card rounded-xl shadow-md border-l-4 border-primary">
-        <p className="text-sm font-medium text-muted-foreground">{title}</p>
-        <p className="text-2xl font-bold text-foreground mt-1">{value}</p>
-    </div>
-);
+        {/* Alert Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          {alertCards.map((stat, index) => (
+            <Card key={index} className={stat.bgColor}>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">
+                  {stat.label}
+                </CardTitle>
+                <stat.icon className={`h-5 w-5 ${stat.color}`} />
+              </CardHeader>
+              <CardContent>
+                <div className={`text-3xl font-bold ${stat.color}`}>
+                  {loading ? (
+                    <div className="h-8 w-16 bg-muted animate-pulse rounded" />
+                  ) : (
+                    stat.value
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Low Stock Products */}
+        {lowStockProducts.length > 0 && (
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-warning" />
+                Produits à faible stock
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Produit</TableHead>
+                    <TableHead>Marque</TableHead>
+                    <TableHead className="text-right">Stock</TableHead>
+                    <TableHead className="text-right">Action</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {lowStockProducts.map((product) => (
+                    <TableRow key={product.id}>
+                      <TableCell className="font-medium">{product.name}</TableCell>
+                      <TableCell>{product.brand || '-'}</TableCell>
+                      <TableCell className="text-right">
+                        <Badge variant={product.stock <= 5 ? 'destructive' : 'secondary'}>
+                          {product.stock} unités
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Link 
+                          to="/admin/produits"
+                          className="text-primary hover:underline text-sm"
+                        >
+                          Gérer
+                        </Link>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Welcome Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Bienvenue dans votre espace d'administration</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">
+              Gérez vos produits, catégories, véhicules, commandes et paramètres du site depuis cet espace.
+              Utilisez le menu de gauche pour naviguer entre les différentes sections.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    </>
+  );
+};
 
 export default Dashboard;
