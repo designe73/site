@@ -3,13 +3,12 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HelmetProvider } from "react-helmet-async";
-import ErrorBoundary from "@/components/ErrorBoundary";
-import { ReactNode } from "react";
-
-// On garde les imports pour ne pas casser le code
+// 👇 ON RÉACTIVE LES IMPORTS
 import { AuthProvider } from "@/hooks/useAuth";
 import { CartProvider } from "@/hooks/useCart";
 import { SiteSettingsProvider } from "@/hooks/useSiteSettings";
+import ErrorBoundary from "@/components/ErrorBoundary";
+import { ReactNode } from "react";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -21,27 +20,25 @@ const queryClient = new QueryClient({
   },
 });
 
+const helmetContext = {};
+
 export const AppProviders = ({ children }: { children: ReactNode }) => {
   return (
     <ErrorBoundary>
-      <HelmetProvider>
+      <HelmetProvider context={helmetContext}>
         <QueryClientProvider client={queryClient}>
-          
-          {/* 👇 TEST : On désactive tout temporairement */}
-          {/* <AuthProvider> */}
-            {/* <CartProvider> */}
-              {/* <SiteSettingsProvider> */}
-                
+          {/* ✅ ON REMET TOUT EN PLACE DANS L'ORDRE */}
+          <AuthProvider>
+            <CartProvider>
+              <SiteSettingsProvider>
                 <TooltipProvider>
                   {children}
                   <Toaster />
                   <Sonner />
                 </TooltipProvider>
-
-              {/* </SiteSettingsProvider> */}
-            {/* </CartProvider> */}
-          {/* </AuthProvider> */}
-
+              </SiteSettingsProvider>
+            </CartProvider>
+          </AuthProvider>
         </QueryClientProvider>
       </HelmetProvider>
     </ErrorBoundary>
