@@ -1,5 +1,5 @@
-// src/App.tsx
-import { BrowserRouter } from "react-router-dom";
+// 1. On change l'import : HashRouter au lieu de BrowserRouter
+import { HashRouter } from "react-router-dom"; 
 import { AppProviders } from "./components/AppProviders";
 import { AppRoutes } from "./routes/AppRoutes";
 import MaintenanceMode from "@/components/MaintenanceMode";
@@ -7,17 +7,13 @@ import PushNotificationPrompt from "@/components/notifications/PushNotificationP
 
 const App = () => (
   <AppProviders>
-    <BrowserRouter
-      future={{
-        v7_startTransition: true,
-        v7_relativeSplatPath: true,
-      }}
-    >
+    {/* 2. On utilise HashRouter ici pour envelopper l'application */}
+    <HashRouter>
       <MaintenanceMode>
         <PushNotificationPrompt />
         <AppRoutes />
       </MaintenanceMode>
-    </BrowserRouter>
+    </HashRouter>
   </AppProviders>
 );
 
