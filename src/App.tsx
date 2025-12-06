@@ -1,20 +1,23 @@
-// 1. On change l'import : HashRouter au lieu de BrowserRouter
-import { HashRouter } from "react-router-dom"; 
-import { AppProviders } from "./components/AppProviders";
-import { AppRoutes } from "./routes/AppRoutes";
-import MaintenanceMode from "@/components/MaintenanceMode";
-import PushNotificationPrompt from "@/components/notifications/PushNotificationPrompt";
+import React from "react";
 
-const App = () => (
-  <AppProviders>
-    {/* 2. On utilise HashRouter ici pour envelopper l'application */}
-    <HashRouter>
-      <MaintenanceMode>
-        <PushNotificationPrompt />
-        <AppRoutes />
-      </MaintenanceMode>
-    </HashRouter>
-  </AppProviders>
-);
+// On n'importe RIEN d'autre pour l'instant (pas de Router, pas de Providers)
+
+const App = () => {
+  return (
+    <div style={{ 
+      display: 'flex', 
+      justifyContent: 'center', 
+      alignItems: 'center', 
+      height: '100vh', 
+      backgroundColor: 'green', 
+      color: 'white', 
+      fontSize: '30px', 
+      textAlign: 'center' 
+    }}>
+      <h1>✅ LE COEUR DE REACT FONCTIONNE !</h1>
+      <p style={{fontSize: '16px'}}>Si tu vois ça, le problème venait de "AppProviders".</p>
+    </div>
+  );
+};
 
 export default App;
