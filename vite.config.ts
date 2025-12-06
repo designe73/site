@@ -4,8 +4,8 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 
 export default defineConfig(({ mode }) => ({
-  // 👇 LA CLEF DU SUCCÈS : Une chaîne vide ou ./ rend les liens relatifs
-  base: "", 
+  // ✅ Mettez un SLASH simple. C'est le plus robuste pour Vercel.
+  base: "/",
   
   server: {
     host: "::",
