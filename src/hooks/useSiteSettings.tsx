@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface SiteSettings {
@@ -53,45 +53,60 @@ export const SiteSettingsProvider = ({ children }: { children: ReactNode }) => {
   const [settings, setSettings] = useState<SiteSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchSettings = async () => {
-    const { data, error } = await supabase
-      .from('site_settings')
-      .select('*')
-      .maybeSingle();
+  // Optimisation : useCallback pour ne pas recréer la fonction à chaque rendu
+  const fetchSettings = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('site_settings')
+        .select('*')
+        .maybeSingle();
 
-    if (error) {
-      console.error('Error fetching site settings:', error);
+      if (error) {
+        console.error('Error fetching site settings:', error);
+        // On garde les paramètres par défaut en cas d'erreur
+        setSettings(defaultSettings);
+      } else if (data) {
+        setSettings({
+          site_name: data.site_name || defaultSettings.site_name,
+          logo_url: data.logo_url || defaultSettings.logo_url,
+          currency: data.currency || defaultSettings.currency,
+          contact_email: data.contact_email || defaultSettings.contact_email,
+          contact_phone: data.contact_phone || defaultSettings.contact_phone,
+          whatsapp_number: data.whatsapp_number || defaultSettings.whatsapp_number,
+          address: data.address || defaultSettings.address,
+          maintenance_mode: data.maintenance_mode ?? defaultSettings.maintenance_mode,
+          maintenance_message: data.maintenance_message || defaultSettings.maintenance_message,
+          maintenance_end_date: data.maintenance_end_date || defaultSettings.maintenance_end_date,
+          seo_title: data.seo_title || defaultSettings.seo_title,
+          seo_description: data.seo_description || defaultSettings.seo_description,
+          seo_keywords: data.seo_keywords || defaultSettings.seo_keywords,
+          whatsapp_enabled: data.whatsapp_enabled ?? defaultSettings.whatsapp_enabled,
+          account_enabled: data.account_enabled ?? defaultSettings.account_enabled,
+        });
+      } else {
+        setSettings(defaultSettings);
+      }
+    } catch (err) {
+      console.warn("Impossible de charger les paramètres du site (connexion ?)", err);
       setSettings(defaultSettings);
-    } else if (data) {
-      setSettings({
-        site_name: data.site_name || defaultSettings.site_name,
-        logo_url: data.logo_url || defaultSettings.logo_url,
-        currency: data.currency || defaultSettings.currency,
-        contact_email: data.contact_email || defaultSettings.contact_email,
-        contact_phone: data.contact_phone || defaultSettings.contact_phone,
-        whatsapp_number: data.whatsapp_number || defaultSettings.whatsapp_number,
-        address: data.address || defaultSettings.address,
-        maintenance_mode: data.maintenance_mode ?? defaultSettings.maintenance_mode,
-        maintenance_message: data.maintenance_message || defaultSettings.maintenance_message,
-        maintenance_end_date: data.maintenance_end_date || defaultSettings.maintenance_end_date,
-        seo_title: data.seo_title || defaultSettings.seo_title,
-        seo_description: data.seo_description || defaultSettings.seo_description,
-        seo_keywords: data.seo_keywords || defaultSettings.seo_keywords,
-        whatsapp_enabled: data.whatsapp_enabled ?? defaultSettings.whatsapp_enabled,
-        account_enabled: data.account_enabled ?? defaultSettings.account_enabled,
-      });
-    } else {
-      setSettings(defaultSettings);
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
-  };
+  }, []);
 
   useEffect(() => {
     fetchSettings();
-  }, []);
+  }, [fetchSettings]);
+
+  // Optimisation : useMemo pour stabiliser l'objet value
+  const value = useMemo(() => ({
+    settings,
+    isLoading,
+    refetch: fetchSettings
+  }), [settings, isLoading, fetchSettings]);
 
   return (
-    <SiteSettingsContext.Provider value={{ settings, isLoading, refetch: fetchSettings }}>
+    <SiteSettingsContext.Provider value={value}>
       {children}
     </SiteSettingsContext.Provider>
   );
