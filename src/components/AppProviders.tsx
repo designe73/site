@@ -3,7 +3,6 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HelmetProvider } from "react-helmet-async";
-// 👇 ON RÉACTIVE LES IMPORTS
 import { AuthProvider } from "@/hooks/useAuth";
 import { CartProvider } from "@/hooks/useCart";
 import { SiteSettingsProvider } from "@/hooks/useSiteSettings";
@@ -27,7 +26,6 @@ export const AppProviders = ({ children }: { children: ReactNode }) => {
     <ErrorBoundary>
       <HelmetProvider context={helmetContext}>
         <QueryClientProvider client={queryClient}>
-          {/* ✅ ON REMET TOUT EN PLACE DANS L'ORDRE */}
           <AuthProvider>
             <CartProvider>
               <SiteSettingsProvider>

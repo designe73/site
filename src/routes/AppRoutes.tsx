@@ -38,7 +38,7 @@ const PageLoader = () => (
   </div>
 );
 
-// ✅ EXPORT NOMMÉ (Indispensable pour correspondre à App.tsx)
+// Utilisation de "export const" pour le Named Export correct
 export const AppRoutes = () => {
   return (
     <Suspense fallback={<PageLoader />}>
@@ -53,7 +53,7 @@ export const AppRoutes = () => {
         <Route path="/categorie/:slug" element={<CategoryProducts />} />
         <Route path="/produit/:slug" element={<ProductDetail />} />
         <Route path="/recherche" element={<SearchResults />} />
-        
+
         {/* Routes Admin Auth */}
         <Route path="/admin/connexion" element={<AdminLogin />} />
         <Route path="/admin/mot-de-passe-oublie" element={<ForgotPassword />} />
