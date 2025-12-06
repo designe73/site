@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
+import { useState, useEffect, createContext, useContext, ReactNode, useMemo, useCallback } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -24,61 +24,97 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState<UserRole>('user');
 
+  // Définition stable des rôles
   const isAdmin = userRole === 'admin';
   const isModerator = userRole === 'moderator' || userRole === 'admin';
 
+  // Fonction pour récupérer le rôle (extraite pour être réutilisable)
+  const fetchUserRole = useCallback(async (userId: string): Promise<UserRole> => {
+    try {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId);
+      
+      if (error) throw error;
+
+      // Priority: admin > moderator > user
+      if (data?.some(r => r.role === 'admin')) return 'admin';
+      if (data?.some(r => r.role === 'moderator')) return 'moderator';
+      return 'user';
+    } catch (err) {
+      console.error("Erreur récupération rôle:", err);
+      return 'user';
+    }
+  }, []);
+
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
+    let mounted = true;
+
+    // 1. Initialisation au démarrage
+    const initializeAuth = async () => {
+      try {
+        const { data: { session: initialSession } } = await supabase.auth.getSession();
         
-        if (session?.user) {
-          setTimeout(() => {
-            checkUserRole(session.user.id);
-          }, 0);
-        } else {
-          setUserRole('user');
+        if (mounted) {
+          setSession(initialSession);
+          setUser(initialSession?.user ?? null);
+
+          if (initialSession?.user) {
+            // IMPORTANT : On attend d'avoir le rôle AVANT de finir le chargement
+            // C'est ça qui empêche la redirection intempestive de l'admin
+            const role = await fetchUserRole(initialSession.user.id);
+            if (mounted) setUserRole(role);
+          } else {
+            if (mounted) setUserRole('user');
+          }
         }
+      } catch (error) {
+        console.error("Auth init error:", error);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    initializeAuth();
+
+    // 2. Écoute des changements (Connexion / Déconnexion)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, currentSession) => {
+        if (!mounted) return;
+
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
+
+        if (currentSession?.user) {
+          // Si on se connecte, on récupère le rôle immédiatement
+          const role = await fetchUserRole(currentSession.user.id);
+          if (mounted) setUserRole(role);
+        } else {
+          // Si on se déconnecte, on reset tout
+          if (mounted) setUserRole('user');
+        }
+        
+        // On s'assure que le loading est false après un changement d'état
+        setLoading(false);
       }
     );
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-      
-      if (session?.user) {
-        checkUserRole(session.user.id);
-      }
-    });
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [fetchUserRole]);
 
-    return () => subscription.unsubscribe();
+  const signIn = useCallback(async (email: string, password: string) => {
+    // On remet loading à true pour éviter les clignotements pendant la requête
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) setLoading(false); // On enlève le loading seulement si erreur (sinon onAuthStateChange gère)
+    return { error };
   }, []);
 
-  const checkUserRole = async (userId: string) => {
-    const { data } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', userId);
-    
-    // Priority: admin > moderator > user
-    if (data?.some(r => r.role === 'admin')) {
-      setUserRole('admin');
-    } else if (data?.some(r => r.role === 'moderator')) {
-      setUserRole('moderator');
-    } else {
-      setUserRole('user');
-    }
-  };
-
-  const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error };
-  };
-
-  const signUp = async (email: string, password: string, fullName: string, phone?: string) => {
+  const signUp = useCallback(async (email: string, password: string, fullName: string, phone?: string) => {
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -91,14 +127,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     });
     return { error };
-  };
+  }, []);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     await supabase.auth.signOut();
-  };
+    setUserRole('user');
+    setLoading(false); // Force le re-render immédiat
+  }, []);
+
+  // Optimisation majeure : l'objet value est stable
+  const value = useMemo(() => ({
+    user,
+    session,
+    loading,
+    signIn,
+    signUp,
+    signOut,
+    isAdmin,
+    isModerator,
+    userRole
+  }), [user, session, loading, signIn, signUp, signOut, isAdmin, isModerator, userRole]);
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signIn, signUp, signOut, isAdmin, isModerator, userRole }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
