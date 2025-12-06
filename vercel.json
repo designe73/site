@@ -1,7 +1,7 @@
 {
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/((?!assets/|favicon.ico|manifest.webmanifest|sw.js|.*\\.png|.*\\.jpg|.*\\.svg).*)",
       "destination": "/index.html"
     }
   ],
@@ -16,7 +16,7 @@
       ]
     },
     {
-      "source": "/(.*)\\.(js|css|map|json)$",
+      "source": "/(.*)\\.(js|css|map|json|webmanifest|png|svg)$",
       "headers": [
         {
           "key": "Cache-Control",
