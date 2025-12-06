@@ -4,8 +4,8 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 
 export default defineConfig(({ mode }) => ({
-  // ✅ IMPORTANT : Le point-slash assure que les fichiers sont toujours trouvés
-  base: "./",
+  // ✅ RETOUR AUX CHEMINS ABSOLUS (Plus stable pour le rafraîchissement)
+  base: "/", 
   
   server: {
     host: "::",
