@@ -1,23 +1,16 @@
-import React from "react";
+import { HashRouter } from "react-router-dom";
+import { AppProviders } from "./components/AppProviders";
+import { AppRoutes } from "./routes/AppRoutes";
+// import MaintenanceMode from "@/components/MaintenanceMode"; // Désactivé car besoin de Settings
+// import PushNotificationPrompt from "@/components/notifications/PushNotificationPrompt"; // Désactivé aussi
 
-// On n'importe RIEN d'autre pour l'instant (pas de Router, pas de Providers)
-
-const App = () => {
-  return (
-    <div style={{ 
-      display: 'flex', 
-      justifyContent: 'center', 
-      alignItems: 'center', 
-      height: '100vh', 
-      backgroundColor: 'green', 
-      color: 'white', 
-      fontSize: '30px', 
-      textAlign: 'center' 
-    }}>
-      <h1>✅ LE COEUR DE REACT FONCTIONNE !</h1>
-      <p style={{fontSize: '16px'}}>Si tu vois ça, le problème venait de "AppProviders".</p>
-    </div>
-  );
-};
+const App = () => (
+  <AppProviders>
+    <HashRouter>
+      {/* On affiche directement les routes sans le mode maintenance pour tester */}
+      <AppRoutes />
+    </HashRouter>
+  </AppProviders>
+);
 
 export default App;
