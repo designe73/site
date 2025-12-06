@@ -1,0 +1,17 @@
+# Configuration Pre-Commit - Simplification de la qualité de code
+# Cet outil exécute Black et Flake8 automatiquement avant chaque 'git commit'.
+repos:
+  # 1. Black (Formatage du style)
+  - repo: https://github.com/psf/black
+    rev: 24.4.2 
+    hooks:
+      - id: black
+        # Black corrige le formatage automatiquement
+        args: ["--line-length", "88"]
+
+  # 2. Flake8 (Vérification de la logique et des erreurs)
+  - repo: https://github.com/PyCQA/flake8
+    rev: 7.0.0
+    hooks:
+      - id: flake8
+        # Flake8 utilise les règles définies dans le fichier .flake8
