@@ -1,14 +1,15 @@
 import { HashRouter } from "react-router-dom";
-import { AppRoutes } from "./routes/AppRoutes";
+// On n'importe PAS les routes complexes pour l'instant pour isoler le bug
+// import { AppRoutes } from "./routes/AppRoutes"; 
 
 const App = () => {
   return (
-    // On retire AppProviders et MaintenanceMode pour tester le Routeur pur
     <HashRouter>
-      <div className="p-4 bg-yellow-200 text-black text-center font-bold">
-        MODE DE SECOURS ACTIVÉ
+      <div style={{ padding: 20, textAlign: 'center' }}>
+        <h1 style={{ color: 'green' }}>✅ LE SITE EST EN LIGNE</h1>
+        <p>Si vous voyez ceci, c'est que la configuration Vite/Vercel est réparée.</p>
+        <p>Nous allons pouvoir réactiver le contenu (Admin, Produits) juste après.</p>
       </div>
-      <AppRoutes />
     </HashRouter>
   );
 };

@@ -4,8 +4,8 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 
 export default defineConfig(({ mode }) => ({
-  // 👇 REMETTEZ LE SLASH UNIQUE (Important pour Vercel)
-  base: "/", 
+  // ✅ IMPORTANT : Le point-slash assure que les fichiers sont toujours trouvés
+  base: "./",
   
   server: {
     host: "::",
