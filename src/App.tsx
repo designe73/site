@@ -1,19 +1,15 @@
 import { HashRouter } from "react-router-dom";
-import { AppProviders } from "./components/AppProviders";
 import { AppRoutes } from "./routes/AppRoutes";
-import MaintenanceMode from "@/components/MaintenanceMode";
-import PushNotificationPrompt from "@/components/notifications/PushNotificationPrompt";
 
 const App = () => {
   return (
-    <AppProviders>
-      <HashRouter>
-        <MaintenanceMode>
-          <PushNotificationPrompt />
-          <AppRoutes />
-        </MaintenanceMode>
-      </HashRouter>
-    </AppProviders>
+    // On retire AppProviders et MaintenanceMode pour tester le Routeur pur
+    <HashRouter>
+      <div className="p-4 bg-yellow-200 text-black text-center font-bold">
+        MODE DE SECOURS ACTIVÉ
+      </div>
+      <AppRoutes />
+    </HashRouter>
   );
 };
 
