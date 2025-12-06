@@ -4,8 +4,8 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 
 export default defineConfig(({ mode }) => ({
-  // ✅ RETOUR AUX CHEMINS ABSOLUS (Plus stable pour le rafraîchissement)
-  base: "/", 
+  // 👇 LA CLEF DU SUCCÈS : Une chaîne vide ou ./ rend les liens relatifs
+  base: "", 
   
   server: {
     host: "::",
