@@ -4,7 +4,8 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 
 export default defineConfig(({ mode }) => ({
-  base: "./", // 👈 METTEZ "./" (point slash) ICI. C'est le plus sûr avec HashRouter.
+  // 👇 REMETTEZ LE SLASH UNIQUE (Important pour Vercel)
+  base: "/", 
   
   server: {
     host: "::",
