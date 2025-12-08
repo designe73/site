@@ -36,7 +36,10 @@ const VehicleSelector = () => {
       const { data } = await supabase.from('vehicles').select('*');
       if (data) {
         setVehicles(data);
-        const uniqueBrands = [...new Set(data.map(v => v.brand))].sort();
+        // CORRECTION ICI : .filter(b => b) élimine les chaînes vides
+        const uniqueBrands = [...new Set(data.map(v => v.brand))]
+          .filter(b => b && b.trim() !== '') 
+          .sort();
         setBrands(uniqueBrands);
       }
     };
@@ -45,11 +48,15 @@ const VehicleSelector = () => {
 
   useEffect(() => {
     if (selectedBrand) {
+      // CORRECTION ICI : filtre pour éviter les modèles vides
       const filteredModels = [...new Set(
         vehicles
           .filter(v => v.brand === selectedBrand)
           .map(v => v.model)
-      )].sort();
+      )]
+      .filter(m => m && m.trim() !== '')
+      .sort();
+
       setModels(filteredModels);
       setSelectedModel('');
       setSelectedYear('');
