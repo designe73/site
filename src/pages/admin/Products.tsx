@@ -740,7 +740,8 @@ const Products = () => {
     setFilterHasImage('all');
   };
 
-  const hasActiveFilters = filterCategory || filterPriceMin || filterPriceMax || 
+  // Modification ici : on vérifie que filterCategory n'est pas 'all'
+  const hasActiveFilters = (filterCategory && filterCategory !== 'all') || filterPriceMin || filterPriceMax || 
     filterStockStatus !== 'all' || filterFeatured !== 'all' || filterPromo !== 'all' || filterHasImage !== 'all';
 
   const filteredProducts = products.filter(p => {
@@ -748,8 +749,8 @@ const Products = () => {
     const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase()) ||
       p.reference?.toLowerCase().includes(search.toLowerCase());
     
-    // Category filter
-    const matchesCategory = !filterCategory || p.category_id === filterCategory;
+    // Category filter - Modification ici : on accepte aussi 'all'
+    const matchesCategory = !filterCategory || filterCategory === 'all' || p.category_id === filterCategory;
     
     // Price filters
     const matchesPriceMin = !filterPriceMin || p.price >= parseFloat(filterPriceMin);
@@ -1224,8 +1225,9 @@ const Products = () => {
                     <SelectTrigger>
                       <SelectValue placeholder="Toutes" />
                     </SelectTrigger>
+                    {/* Modification ici : value="all" au lieu de "" */}
                     <SelectContent>
-                      <SelectItem value="">Toutes</SelectItem>
+                      <SelectItem value="all">Toutes</SelectItem>
                       {categories.map((cat) => (
                         <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
                       ))}
